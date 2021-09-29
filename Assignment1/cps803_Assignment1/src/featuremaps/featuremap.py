@@ -1,11 +1,10 @@
 import util
 import numpy as np
 import matplotlib.pyplot as plt
-
+import math
 np.seterr(all='raise')
 
 factor = 2.0
-
 
 class LinearModel(object):
     """Base class for linear models."""
@@ -17,6 +16,8 @@ class LinearModel(object):
         """
         self.theta = theta
 
+
+
     def fit(self, X, y):
         """Run solver to fit linear model. You have to update the value of
         self.theta using the normal equations.
@@ -26,6 +27,19 @@ class LinearModel(object):
             y: Training example labels. Shape (n_examples,).
         """
         # *** START CODE HERE ***
+        m = []
+        for i in range(0, len(X)):
+            vec = X[i]
+            m.append(vec)
+        matrix = np.array(m)
+
+        multd = np.matmul(np.transpose(matrix), matrix)
+        ident = np.identity(np.shape(multd)[0])
+        res = np.linalg.solve(multd, ident)
+
+        multd = np.matmul(np.transpose(matrix), y)
+        return np.dot(res, multd)
+
         # *** END CODE HERE ***
 
     def fit_GD(self, X, y):
@@ -37,6 +51,18 @@ class LinearModel(object):
             y: Training example labels. Shape (n_examples,).
         """
         # *** START CODE HERE ***
+        alpha = 0.01
+
+        res = self.predict(X)
+        total = res.sum()
+
+        for i in range(0, len(res)):
+            vec = X[i]
+            for j in range(0, len(self.theta)):
+                val = self.theta[i]
+                val -= alpha * total * vec[j]
+                self.theta[j] = val
+        return self.theta
         # *** END CODE HERE ***
 
     def fit_SGD(self, X, y):
@@ -48,6 +74,9 @@ class LinearModel(object):
             y: Training example labels. Shape (n_examples,).
         """
         # *** START CODE HERE ***
+        for i in range(0, len(X)):
+            hypothesis = self.predict(X[i])
+            self.theta = self.theta - (alpha * hypothesis * X[i])
         # *** END CODE HERE ***
 
     def create_poly(self, k, X):
@@ -60,6 +89,16 @@ class LinearModel(object):
             X: Training example inputs. Shape (n_examples, 2).
         """
         # *** START CODE HERE ***
+        res = []
+        for x in X:
+            val = x[1]
+            i = 0
+            lst = []
+            while i <= k:
+                lst.append(val ** i)
+                i += 1
+            res.append(np.array(lst))
+        return np.array(res)
         # *** END CODE HERE ***
 
     def create_cosine(self, k, X):
@@ -71,6 +110,18 @@ class LinearModel(object):
             X: Training example inputs. Shape (n_examples, 2).
         """
         # *** START CODE HERE ***
+        res = []
+        for x in X:
+            val = x[1]
+            i = 0
+            lst = []
+            while i <= k:
+                lst.append(val**i)
+                i += 1
+            lst.append(math.cos(val))
+            res.append(np.array(lst))
+        return np.array(res)
+
         # *** END CODE HERE ***
 
     def predict(self, X):
@@ -85,7 +136,14 @@ class LinearModel(object):
             Outputs of shape (n_examples,).
         """
         # *** START CODE HERE ***
+        if self.theta is None:
+            return None
+        results = []
+        for x in X:
+            results.append(self.theta.dot(x))
+        return np.array(results)
         # *** END CODE HERE ***
+
 
 def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pdf'):
 
@@ -100,7 +158,19 @@ def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pd
         Our objective is to train models and perform predictions on plot_x data
         '''
         # *** START CODE HERE ***
+        model = LinearModel(np.ones([1,4]))
+        x = model.create_poly(3, train_x)
+        res = model.fit(x, train_y)
 
+        plot_y = []
+        for i in plot_x:
+            print("i", i)
+            print("i[1]", i[1])
+            plot_y.append(
+                np.sum(res * i[1])
+            )
+            print("f(i)", plot_y[-1])
+        f_type = "Normal"
         # *** END CODE HERE ***
         '''
         Here plot_y are the predictions of the linear model on the plot_x data
@@ -120,6 +190,8 @@ def main(medium_path, small_path):
     Run all expetriments
     '''
     # *** START CODE HERE ***
+    run_exp(small_path)
+    run_exp(medium_path)
     # *** END CODE HERE ***
 
 
