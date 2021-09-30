@@ -29,7 +29,7 @@ class LinearModel(object):
         # *** START CODE HERE ***
         m = []
         for i in range(0, len(X)):
-            vec = X[i]
+            vec = X[i][0]
             m.append(vec)
         matrix = np.array(m)
 
@@ -38,7 +38,7 @@ class LinearModel(object):
         res = np.linalg.solve(multd, ident)
 
         multd = np.matmul(np.transpose(matrix), y)
-        return np.dot(res, multd)
+        self.theta = np.dot(res, multd)
 
         # *** END CODE HERE ***
 
@@ -54,16 +54,16 @@ class LinearModel(object):
         alpha = 0.01
 
         res = self.predict(X)
-        total = res.sum()
 
+        step = alpha * np.sum(res[:] - y[:])
         for i in range(0, len(res)):
             vec = X[i]
-            for j in range(0, len(self.theta)):
-                val = self.theta[i]
-                val -= alpha * total * vec[j]
-                self.theta[j] = val
-        return self.theta
+            for j in range(0, len(self.theta[0])):
+                val = self.theta[0][j]
+                val -= step * vec[j]
+                self.theta[0][j] = val
         # *** END CODE HERE ***
+
 
     def fit_SGD(self, X, y):
         """Run solver to fit linear model. You have to update the value of
@@ -74,9 +74,18 @@ class LinearModel(object):
             y: Training example labels. Shape (n_examples,).
         """
         # *** START CODE HERE ***
+        alpha = 0.01
+
+        lst = []
         for i in range(0, len(X)):
-            hypothesis = self.predict(X[i])
-            self.theta = self.theta - (alpha * hypothesis * X[i])
+            lst.append( self.predict(X[i]))
+            res = np.array(lst)
+            vec = X[i]
+            step = alpha * (np.sum(res[:] - y[:len(res) - 1]))
+            for j in range(0, len(self.theta)):
+                val = self.theta[0][i]
+                val -= step * vec[j]
+                self.theta[0][j] = val
         # *** END CODE HERE ***
 
     def create_poly(self, k, X):
@@ -89,6 +98,8 @@ class LinearModel(object):
             X: Training example inputs. Shape (n_examples, 2).
         """
         # *** START CODE HERE ***
+        if k == 1:
+            return np.array([x[1] for x in X])
         res = []
         for x in X:
             val = x[1]
@@ -140,8 +151,8 @@ class LinearModel(object):
             return None
         results = []
         for x in X:
-            results.append(self.theta.dot(x))
-        return np.array(results)
+            results.append(self.theta.T[0].dot(x.T[0]))
+        return np.array(results).reshape((len(results), ))
         # *** END CODE HERE ***
 
 
@@ -158,19 +169,18 @@ def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pd
         Our objective is to train models and perform predictions on plot_x data
         '''
         # *** START CODE HERE ***
-        model = LinearModel(np.ones([1,4]))
+        model = LinearModel(np.zeros([1,4]))
         x = model.create_poly(3, train_x)
-        res = model.fit(x, train_y)
+        exp = k
+        if exp > 3:
+            exp = 3
+        print("10^", exp + 1, "iterations")
 
-        plot_y = []
-        for i in plot_x:
-            print("i", i)
-            print("i[1]", i[1])
-            plot_y.append(
-                np.sum(res * i[1])
-            )
-            print("f(i)", plot_y[-1])
-        f_type = "Normal"
+        for i in range(0, (100*(10**(exp)))):
+            model.fit_GD(x, train_y)
+
+        plot_y = model.predict(model.create_poly(3, plot_x))
+        f_type = "Gradient Descent"
         # *** END CODE HERE ***
         '''
         Here plot_y are the predictions of the linear model on the plot_x data
@@ -190,8 +200,8 @@ def main(medium_path, small_path):
     Run all expetriments
     '''
     # *** START CODE HERE ***
-    run_exp(small_path)
-    run_exp(medium_path)
+    run_exp(small_path, ks=[1,2,3], filename="SmallGD.pdf")
+    run_exp(medium_path, ks=[1,2,3], filename="MediumGD.pdf")
     # *** END CODE HERE ***
 
 
