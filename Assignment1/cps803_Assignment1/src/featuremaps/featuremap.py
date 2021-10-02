@@ -18,8 +18,6 @@ class LinearModel(object):
         """
         self.theta = theta
 
-
-
     def fit(self, X, y):
         """Run solver to fit linear model. You have to update the value of
         self.theta using the normal equations.
@@ -34,7 +32,6 @@ class LinearModel(object):
             vec = X[i]
             m.append(vec)
         matrix = np.array(m)
-
         multd = np.matmul(np.transpose(matrix), matrix)
         ident = np.identity(multd.shape[0])
         res = np.linalg.solve(multd, ident)
@@ -101,12 +98,12 @@ class LinearModel(object):
         """
         # *** START CODE HERE ***
         if k == 1:
-            return np.array([x[1] for x in X])
+            return np.array([[1,x[1]] for x in X])
         res = []
         for x in X:
             val = x[1]
             lst = []
-            for i in range(0, k + 1):
+            for i in range(k + 1):
                 lst.append(val ** i)
             res.append(np.array(lst))
         return np.array(res)
@@ -126,9 +123,8 @@ class LinearModel(object):
             val = x[1]
             i = 0
             lst = []
-            while i <= k:
+            for i in range(k+1):
                 lst.append(val**i)
-                i += 1
             lst.append(math.cos(val))
             res.append(np.array(lst))
         return np.array(res)
@@ -173,30 +169,37 @@ def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pd
         Our objective is to train models and perform predictions on plot_x data
         '''
         # *** START CODE HERE ***
-
-        model = LinearModel(0.5*np.ones([1,4]))
-        x = model.create_poly(3, train_x)
-
-        if "GD" in filename:
-            f_type = "Gradient Descent"
-            for i in range(0, (100*(10**(k-1)))):
-                model.fit_GD(x, train_y)
-        elif "SGD" in filename:
-            f_type = "Stochastic Gradient Descent"
-            for i in range(0, (100*(10**(k-1)))):
-                model.fit_SGD(x, train_y)
+        model = LinearModel(np.zeros([1, k + 1]))
+        if not cosine:
+            x = model.create_poly(k, train_x)
         else:
+            x = model.create_cosine(k, train_x)
+
+        if "Normal" in filename:
             f_type = "Normal"
             model.fit(x, train_y)
+        elif "SGD" in filename:
+            f_type = "Stochastic Gradient Descent"
+            for i in range(3):
+                for j in range(10000):
+                    model.fit_SGD(x, train_y)
+        else:
+            f_type = "Gradient Descent"
+            for i in range(3):
+                for j in range(10000):
+                    model.fit_GD(x, train_y)
 
-        plot_y = model.predict(model.create_poly(3, plot_x))
+        if cosine:
+            plot_y = model.predict(model.create_cosine(k, plot_x))
+        else:
+            plot_y = model.predict(model.create_poly(k, plot_x))
         # *** END CODE HERE ***
         '''
         Here plot_y are the predictions of the linear model on the plot_x data
         '''
         plt.ylim(-2.5, 2.5)
         plt.plot(plot_x[:, 1], plot_y,
-                 label='k={:d}, fit={:s}'.format(k, f_type))
+                label='k={:d}, fit={:s}'.format(k, f_type))
 
     plt.legend()
     plt.tight_layout()
@@ -209,13 +212,15 @@ def main(medium_path, small_path):
     Run all expetriments
     '''
     # *** START CODE HERE ***
-    run_exp(small_path, filename='SmallNorm')
-    run_exp(small_path, ks=[1,2,3], filename="SmallGD")
-    run_exp(small_path, ks=[1, 2, 3], filename='SmallSGD')
 
-    run_exp(medium_path, filename="MediumNorm")
-    run_exp(medium_path, ks=[1,2,3], filename="MediumGD")
-    run_exp(medium_path, ks=[1, 2, 3], filename='MediumSGD')
+    run_exp(medium_path, False, [3], "MedNorm")
+    run_exp(medium_path, False, [3], "MedGD")
+    run_exp(medium_path, False, [3], 'MedSGD')
+    run_exp(medium_path, False, [3,5,10,20], "MedNormalFitChange")
+    run_exp(medium_path, True, [3,5,10,20], 'MedNormalCosFitChange')
+    run_exp(small_path, False, [1,3,5,10,20], 'SmallNormalOverfit')
+    run_exp(small_path, True, [1,3,5,10,20], 'SmallNormalCosOverfit')
+
     # *** END CODE HERE ***
 
 
