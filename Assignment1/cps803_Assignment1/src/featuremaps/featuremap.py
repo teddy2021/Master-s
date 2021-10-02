@@ -60,15 +60,17 @@ class LinearModel(object):
         update = np.zeros(np.shape(X)[1],dtype='float')
 
         for i in range(0, len(X)):
-            for j in range(0,update.size):
-                update[j] += alpha *(  res[i] - y[i] ) * X[i][j]
+            step = res[i]
+            step -= y[i]
+            step *= alpha
+            step *= X[i]
+            update += step
 
-        for i in range(0, self.theta.size - 1):
-            self.theta[0][i] -= update[i]
+        update /= len(X)
+        self.theta -= update
 
 
         # *** END CODE HERE ***
-
 
     def fit_SGD(self, X, y):
         """Run solver to fit linear model. You have to update the value of
@@ -84,11 +86,8 @@ class LinearModel(object):
         for i in range(0, len(X)):
             vec = X[i]
             res = self.predict(vec)
-            for j in range(0, self.theta.size):
-                val = self.theta[0][j]
-                step = alpha * (res - y[i]) * X[i][j]
-                val -= step
-                self.theta[0][j] = val
+            val = alpha * (y[i] - res)*vec
+            self.theta -= val
         # *** END CODE HERE ***
 
     def create_poly(self, k, X):
@@ -166,9 +165,6 @@ def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pd
     plot_x = np.ones([1000, 2])
     plot_x[:, 1] = np.linspace(-0.1, 1.1, 1000)
     plt.figure()
-    for i in range(0, len(train_x)):
-        train_x[i][1] = (i/2) + random.random()
-        train_y[i] = i
 
     plt.scatter(train_x[:, 1], train_y)
 
@@ -178,17 +174,22 @@ def run_exp(train_path, cosine=False, ks=[1, 2, 3, 5, 10, 20], filename='plot.pd
         '''
         # *** START CODE HERE ***
 
-        model = LinearModel(0.5*np.zeros([1,4]))
+        model = LinearModel(0.5*np.ones([1,4]))
         x = model.create_poly(3, train_x)
-        if filename == "MedLinGD.pdf":
-            print(x)
-        exp = 1
 
-        for i in range(0, (100*(10**(exp)))):
-            model.fit_GD(x, train_y)
+        if "GD" in filename:
+            f_type = "Gradient Descent"
+            for i in range(0, (100*(10**(k-1)))):
+                model.fit_GD(x, train_y)
+        elif "SGD" in filename:
+            f_type = "Stochastic Gradient Descent"
+            for i in range(0, (100*(10**(k-1)))):
+                model.fit_SGD(x, train_y)
+        else:
+            f_type = "Normal"
+            model.fit(x, train_y)
 
         plot_y = model.predict(model.create_poly(3, plot_x))
-        f_type = "Gradient Descent"
         # *** END CODE HERE ***
         '''
         Here plot_y are the predictions of the linear model on the plot_x data
@@ -208,8 +209,13 @@ def main(medium_path, small_path):
     Run all expetriments
     '''
     # *** START CODE HERE ***
-    run_exp(small_path, ks=[1,2,3], filename="SmallLinGD.pdf")
-    run_exp(medium_path, ks=[1,2,3], filename="MedLinGD.pdf")
+    run_exp(small_path, filename='SmallNorm')
+    run_exp(small_path, ks=[1,2,3], filename="SmallGD")
+    run_exp(small_path, ks=[1, 2, 3], filename='SmallSGD')
+
+    run_exp(medium_path, filename="MediumNorm")
+    run_exp(medium_path, ks=[1,2,3], filename="MediumGD")
+    run_exp(medium_path, ks=[1, 2, 3], filename='MediumSGD')
     # *** END CODE HERE ***
 
 
