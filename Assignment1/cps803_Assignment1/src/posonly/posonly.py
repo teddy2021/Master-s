@@ -1,6 +1,8 @@
 import numpy as np
 import util
 import sys
+import math
+import matplotlib.pyplot as plt
 
 ### NOTE : You need to complete logreg implementation first!
 class LogisticRegression:
@@ -35,6 +37,17 @@ class LogisticRegression:
             y: Training example labels. Shape (n_examples,).
         """
         # *** START CODE HERE ***
+        m = []
+        for i in range(len(x)):
+            vec = x[i]
+            m.append(vec)
+        matrix = np.array(m)
+        multd = np.matmul(np.transpose(matrix), matrix)
+        ident = np.identity(multd.shape[0])
+        res = np.linalg.solve(multd, ident)
+
+        multd = np.matmul(np.transpose(matrix), y)
+        self.theta = np.dot(res, multd)
         # *** END CODE HERE ***
 
     def predict(self, x):
@@ -47,6 +60,12 @@ class LogisticRegression:
             Outputs of shape (n_examples,).
         """
         # *** START CODE HERE ***
+        lst = []
+        for i in x:
+            exp = math.e ** (self.theta.dot(i))
+            exp += 1
+            lst.append(1/exp)
+        return np.array(lst)
         # *** END CODE HERE ***
 
 
@@ -75,11 +94,66 @@ def main(train_path, valid_path, test_path, save_path):
     # *** START CODE HERE ***
     # Part (a): Train and test on true labels
     # Make sure to save predicted probabilities to output_path_true using np.savetxt()
+
+    plt.figure()
+
+    t, x, y = loadData(test_path)
+    zero = []
+    one = []
+    minx = int(min(x[:,0]))
+    maxx = int(max(x[:,0]))
+    miny = int(min(x[:,1]))
+    maxy = int(max(x[:,1]))
+    for i in range(len(x)):
+        if t[i] == 0.0:
+            zero.append(x[i])
+        else:
+            one.append(x[i])
+
+    zero = np.array(zero)
+    one = np.array(one)
+
+    plt.scatter(zero[:,0], zero[:,1])
+    plt.scatter(one[:,0], one[:,1])
+    plt.xlabel("X_1")
+    plt.xticks(np.arange(minx-2, maxx + 2, (maxx-minx)/10))
+    plt.yticks(np.arange(miny-2, maxy+2, (maxy - miny)/10))
+    plt.ylabel("x_2")
+    test_model = LogisticRegression()
+    test_model.fit(x, y)
+
+    z = x[:,0]
+
+    xset = [i for i in range(int(min(z)) - 1,int(max(z)) * 2)]
+    yset = test_model.predict(xset)
+    np.savetxt(output_path_true, yset)
+    plt.plot(xset, yset)
     # Part (b): Train on y-labels and test on true labels
     # Make sure to save predicted probabilities to output_path_naive using np.savetxt()
     # Part (f): Apply correction factor using validation set and test on true labels
     # Plot and use np.savetxt to save outputs to output_path_adjusted
+    plt.show()
     # *** END CODER HERE
+
+
+def loadData(path):
+    f = open(path)
+    f.readline()
+
+    ts = []
+    xs = []
+    ys = []
+    for line in f:
+        lst = line.strip().split(",")
+        ts.append(float(lst[0]))
+        x1 = float(lst[1])
+        x2 = float(lst[2])
+        xs.append(np.array([x1, x2]))
+        ys.append(float(lst[3]))
+    f.close()
+    return (ts, np.array(xs), ys)
+
+
 
 if __name__ == '__main__':
     main(train_path='train.csv',
