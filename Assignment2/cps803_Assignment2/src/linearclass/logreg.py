@@ -1,5 +1,6 @@
 import numpy as np
 import util
+import matplotlib.pyplot as plt
 
 
 def main(train_path, valid_path, save_path):
@@ -11,10 +12,16 @@ def main(train_path, valid_path, save_path):
         save_path: Path to save predicted probabilities using np.savetxt().
     """
     x_train, y_train = util.load_dataset(train_path, add_intercept=True)
-
+    plt.figure()
     # *** START CODE HERE ***
     # Train a logistic regression classifier
+    model = LogisticRegression()
+    model.fit(x_train, y_train)
     # Plot decision boundary on top of validation set set
+    plot_x, plot_y = util.load_dataset(valid_path, add_intercept=True)
+    util.plot(plot_x, plot_y, model.theta, save_path + ".png")
+
+    np.savetxt(save_path, model.predict(plot_x))
     # Use np.savetxt to save predictions on eval set to save_path
     # *** END CODE HERE ***
 
@@ -54,7 +61,8 @@ class LogisticRegression:
         if self.theta is None:
             self.theta = np.zeros(n, dtype=np.float32)
 
-        for i in range(self.max_iter):
+        i = 0
+        while True:
             grad = self._gradient(x, y)
             hess = self._hessian(x)
 
@@ -67,6 +75,7 @@ class LogisticRegression:
 
             if np.sum(np.abs(prev_theta - self.theta)) < self.eps:
                 break
+            i += 1
 
         if self.verbose:
             print('Final theta (logreg): {}'.format(self.theta))
