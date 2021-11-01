@@ -123,6 +123,20 @@ Thus we have natural parameters:
 \[ \eta = ln(\lambda) \]
 \[ T(y) = y \]
 \[ a(\eta) = \lambda \]
+
+\subsection{Question 2}
+\begin{center}
+	\begin{align*}
+		g(n) &= E\left[ y; \eta \right ]\\
+			 &= E\left[ p(y; \eta) \right] \\
+			 &= E\left[ b(y)e^{\eta^TT(y)-a(n)} \right]\\
+			 &= \frac{d}{d \eta}\left( \frac{e^{ln(\lambda)^Ty - \lambda}}{y!}\right )\\
+			 &= \frac{d}{dy}\frac{d}{ln(\lambda)}\left( \frac{e^{ln(\lambda)^Ty-\lambda}}{y!}\right )\\
+			 &= \frac{\frac{d}{dy}\frac{d}{d \lambda}ln(\lambda)^ty -\lambda e^{ln(\lambda)^Ty-\lambda}}
+			 {\frac{d}{dy} \frac{d}{d ln(\lambda)}y! }\\
+			 &= \frac{d}{dy}\frac{d}{dln(\lambda)}
+	 \end{align*}
+\end{center}
 \subsection{}
 
 \end{document}
