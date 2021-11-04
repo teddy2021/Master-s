@@ -21,6 +21,11 @@ def get_words(message):
     """
 
     # *** START CODE HERE ***
+    string = message.split(" ")
+    output = []
+    for x in string:
+        output.append(x.lower())
+    return output
     # *** END CODE HERE ***
 
 
@@ -41,6 +46,14 @@ def create_dictionary(messages):
     """
 
     # *** START CODE HERE ***
+    counts = {}
+    for message in messages:
+        for word in get_words(message):
+            if word not in counts.keys():
+                counts[word] = 0
+            counts[word] += 1
+    return counts
+
     # *** END CODE HERE ***
 
 
@@ -48,8 +61,8 @@ def transform_text(messages, word_dictionary):
     """Transform a list of text messages into a numpy array for further processing.
 
     This function should create a numpy array that contains the number of times each word
-    of the vocabulary appears in each message. 
-    Each row in the resulting array should correspond to each message 
+    of the vocabulary appears in each message.
+    Each row in the resulting array should correspond to each message
     and each column should correspond to a word of the vocabulary.
 
     Use the provided word dictionary to map words to column indices. Ignore words that
@@ -64,7 +77,21 @@ def transform_text(messages, word_dictionary):
         Where the component (i,j) is the number of occurrences of the
         j-th vocabulary word in the i-th message.
     """
-    # *** START CODE HERE ***
+    # *** STdvb n<F4><F9>c<F8><F6><F7>RT CODE HERE ***
+    out = []
+    keys = word_dictionary.keys()
+    for message in messages:
+        wordset = np.zeros(len(keys))
+        i = 0
+        words = get_words(message)
+        for word in keys:
+            if word in words:
+                wordset[i] = word_dictionary[word]
+            i += 1
+        out.append(np.array(wordset))
+    return np.array(out)
+
+
     # *** END CODE HERE ***
 
 
@@ -85,6 +112,42 @@ def fit_naive_bayes_model(matrix, labels):
     """
 
     # *** START CODE HERE ***
+    count, dim = matrix.shape
+    print(count, len(labels))
+    y = labels.sum()
+    ny = len(labels) - y
+
+    py = y / len(labels)
+    pny = ny / len(labels)
+
+    print("y =", y, "ny =", ny )
+
+
+    pxy = [ 0 for x in range(dim) ]
+    pnxy = [0 for x in range(dim) ]
+
+    for i in range(len(labels)):
+        if labels[i] == 0:
+            for j in range(dim):
+                if matrix[i][j] == 0:
+                    pnxy[j] += np.log(2/(ny+2))
+        else:
+            for j in range(dim):
+                if matrix[i][j] != 0:
+                    pxy[j] += np.log(2/(y+2))
+
+
+    pyx = []
+    for i in range(len(labels)):
+        #print("[1.", i, "]", pxy[i], "*", py, "=", pxy[i]*py)
+        num = pxy[i] * py
+        #print("[2.", i, "]", num, '* (', pnxy[i], '*', pny, ') =', num * (pnxy[i] * pny))
+        denom = num + (pnxy[i] * pny)
+        #print("[3.", i, "]", num, '/', denom, '=', num/denom)
+        pyx.append(num/denom)
+    print(pyx)
+    theta = np.array(pyx)
+    return theta
     # *** END CODE HERE ***
 
 
@@ -101,6 +164,14 @@ def predict_from_naive_bayes_model(model, matrix):
     Returns: A numpy array containg the predictions from the model
     """
     # *** START CODE HERE ***
+    count, _ = matrix.shape
+    res = []
+    print(model, model.shape)
+    print(matrix[0], matrix[0].shape)
+    for x in range(count):
+        res.append(np.exp(model.dot(matrix[x])))
+    return np.array(res)
+
     # *** END CODE HERE ***
 
 
