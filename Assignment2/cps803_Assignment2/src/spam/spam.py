@@ -6,6 +6,7 @@ import util
 import svm
 
 
+
 def get_words(message):
     """Get the normalized list of words from a message string.
 
@@ -89,6 +90,7 @@ def transform_text(messages, word_dictionary):
                 wordset[i] = word_dictionary[word]
             i += 1
         out.append(np.array(wordset))
+    print(len(out))
     return np.array(out)
 
 
@@ -114,40 +116,31 @@ def fit_naive_bayes_model(matrix, labels):
     # *** START CODE HERE ***
     count, dim = matrix.shape
     print(count, len(labels))
-    y = labels.sum()
-    ny = len(labels) - y
 
-    py = y / len(labels)
-    pny = ny / len(labels)
+    y = labels.sum() # sum{y=1}
+    ny = len(labels) - y # sum{y=0}
 
-    print("y =", y, "ny =", ny )
+    py = y / len(labels) # probability of y=1
+    pny = ny / len(labels) # probability of y=0
 
-
-    pxy = [ 0 for x in range(dim) ]
-    pnxy = [0 for x in range(dim) ]
+    pxy = [ 1 for x in range(dim) ] # probability of x=j | y=1
+    pnxy = [ 1 for x in range(dim) ] # probability of x=j | y=0
 
     for i in range(len(labels)):
         if labels[i] == 0:
             for j in range(dim):
-                if matrix[i][j] == 0:
-                    pnxy[j] += np.log(2/(ny+2))
+                if matrix[i][j] != 0:
+                    pnxy[j] *= np.log(1 + matrix[i][j]/(ny+2)) # p(x_j = 0 | y = 0)
         else:
             for j in range(dim):
                 if matrix[i][j] != 0:
-                    pxy[j] += np.log(2/(y+2))
+                    pxy[j] *= np.log(1 + matrix[i][j]/(y+2)) # p(x_j != 0 | y = 1)
 
+        pyx = []
+        for i in range(dim):
+            pyx.append(py * pxy[i] / ((py * pxy[i]) + (pny * pnxy[i])))
 
-    pyx = []
-    for i in range(len(labels)):
-        #print("[1.", i, "]", pxy[i], "*", py, "=", pxy[i]*py)
-        num = pxy[i] * py
-        #print("[2.", i, "]", num, '* (', pnxy[i], '*', pny, ') =', num * (pnxy[i] * pny))
-        denom = num + (pnxy[i] * pny)
-        #print("[3.", i, "]", num, '/', denom, '=', num/denom)
-        pyx.append(num/denom)
-    print(pyx)
-    theta = np.array(pyx)
-    return theta
+    return np.array(pyx)
     # *** END CODE HERE ***
 
 
@@ -164,14 +157,11 @@ def predict_from_naive_bayes_model(model, matrix):
     Returns: A numpy array containg the predictions from the model
     """
     # *** START CODE HERE ***
-    count, _ = matrix.shape
-    res = []
-    print(model, model.shape)
-    print(matrix[0], matrix[0].shape)
-    for x in range(count):
-        res.append(np.exp(model.dot(matrix[x])))
-    return np.array(res)
-
+    y = []
+    for x in matrix:
+        y.append(1/(1+np.exp(model @ x)))
+    print(y)
+    return np.array(y)
     # *** END CODE HERE ***
 
 
