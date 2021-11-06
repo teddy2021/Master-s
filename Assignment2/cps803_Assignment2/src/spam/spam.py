@@ -5,6 +5,60 @@ import numpy as np
 import util
 import svm
 
+import pdb
+
+class Model:
+    def __init__(self, theta_0=None, px1y1=None, px1y0=None):
+        self.theta = theta_0
+        self.px1y1 = px1y1
+        self.px1y0 = px1y0
+
+    def fit(self, matrix, labels):
+
+        count, dim = matrix.shape
+
+        y = float(labels.sum()) # sum{y=1}
+        ny = float(len(labels) - y) # sum{y=0}
+
+        l_count = len(labels)
+        py = y / l_count # probability of y=1
+        pny = ny / l_count # probability of y=0
+        if None == self.px1y0:
+            self.px1y0 = np.zeros((dim,), dtype="float")
+        if None == self.px1y1:
+            self.px1y1 = np.zeros((dim,), dtype="float")
+
+        for j in range(dim):
+            for i in range(count):
+                if labels[i] == 0:
+                    if self.px1y0[j] == 0:
+                        self.px1y0[j] = 2.0/(ny +2.0)
+                    else:
+                        self.px1y0[j] += 1.0/ny
+                else:
+                    if self.px1y1[j] == 0:
+                        self.px1y1[j] = 2.0/(y+2.0)
+                    else:
+                        self.px1y1[j] += 1.0/y
+
+
+        py1x1 = []
+        for i in range(dim):
+                py1x1.append(
+                    self.px1y1[i] * py /
+                    (self.px1y1[i] * py + self.px1y0[i]*pny)
+                )
+
+        self.theta = np.array(py1x1)
+
+    def predict(self, matrix):
+        res = []
+        for x in matrix:
+            try:
+                res.append(1/(1+np.exp(-self.theta.dot(x))))
+            except:
+                pdb.set_trace()
+        return np.array(res)
 
 
 def get_words(message):
@@ -78,7 +132,7 @@ def transform_text(messages, word_dictionary):
         Where the component (i,j) is the number of occurrences of the
         j-th vocabulary word in the i-th message.
     """
-    # *** STdvb n<F4><F9>c<F8><F6><F7>RT CODE HERE ***
+    # *** START CODE HERE ***
     out = []
     keys = word_dictionary.keys()
     for message in messages:
@@ -90,7 +144,6 @@ def transform_text(messages, word_dictionary):
                 wordset[i] = word_dictionary[word]
             i += 1
         out.append(np.array(wordset))
-    print(len(out))
     return np.array(out)
 
 
@@ -112,35 +165,10 @@ def fit_naive_bayes_model(matrix, labels):
 
     Returns: The trained model
     """
-
     # *** START CODE HERE ***
-    count, dim = matrix.shape
-    print(count, len(labels))
-
-    y = labels.sum() # sum{y=1}
-    ny = len(labels) - y # sum{y=0}
-
-    py = y / len(labels) # probability of y=1
-    pny = ny / len(labels) # probability of y=0
-
-    pxy = [ 1 for x in range(dim) ] # probability of x=j | y=1
-    pnxy = [ 1 for x in range(dim) ] # probability of x=j | y=0
-
-    for i in range(len(labels)):
-        if labels[i] == 0:
-            for j in range(dim):
-                if matrix[i][j] != 0:
-                    pnxy[j] *= np.log(1 + matrix[i][j]/(ny+2)) # p(x_j = 0 | y = 0)
-        else:
-            for j in range(dim):
-                if matrix[i][j] != 0:
-                    pxy[j] *= np.log(1 + matrix[i][j]/(y+2)) # p(x_j != 0 | y = 1)
-
-        pyx = []
-        for i in range(dim):
-            pyx.append(py * pxy[i] / ((py * pxy[i]) + (pny * pnxy[i])))
-
-    return np.array(pyx)
+    model = Model()
+    model.fit(matrix, labels)
+    return model
     # *** END CODE HERE ***
 
 
@@ -157,11 +185,7 @@ def predict_from_naive_bayes_model(model, matrix):
     Returns: A numpy array containg the predictions from the model
     """
     # *** START CODE HERE ***
-    y = []
-    for x in matrix:
-        y.append(1/(1+np.exp(model @ x)))
-    print(y)
-    return np.array(y)
+    return model.predict(matrix)
     # *** END CODE HERE ***
 
 
@@ -178,6 +202,15 @@ def get_top_five_naive_bayes_words(model, dictionary):
     Returns: A list of the top five most indicative words in sorted order with the most indicative first
     """
     # *** START CODE HERE ***
+    keys = list(dictionary.keys())
+    res = []
+    for x in range(len(keys)):
+        res.append(((np.log(model.px1y1[x]/model.px1y0[x])), x))
+    out = [(prob, keys[x]) for prob, x in sorted(res,
+                                                 reverse=True)[0:4]]
+    return out
+
+
     # *** END CODE HERE ***
 
 
