@@ -5,60 +5,36 @@ import numpy as np
 import util
 import svm
 
-import pdb
+
 
 class Model:
     def __init__(self, theta_0=None, px1y1=None, px1y0=None):
-        self.theta = theta_0
         self.px1y1 = px1y1
         self.px1y0 = px1y0
 
     def fit(self, matrix, labels):
-
         count, dim = matrix.shape
 
-        y = float(labels.sum()) # sum{y=1}
-        ny = float(len(labels) - y) # sum{y=0}
+        spam = matrix[labels == 1]
+        nspam = matrix[labels == 0]
 
-        l_count = len(labels)
-        py = y / l_count # probability of y=1
-        pny = ny / l_count # probability of y=0
-        if None == self.px1y0:
-            self.px1y0 = np.zeros((dim,), dtype="float")
-        if None == self.px1y1:
-            self.px1y1 = np.zeros((dim,), dtype="float")
+        # get the sums of frequenceis of words, as well as the
+        # the np.sum term in each represents the total of x = k in the
+        # respective case, the +1/dim is laplacian smoothing, and the len term
+        # covers the probability of y=(1||0)
+        self.px1y0 = (np.sum(nspam, axis=0) + 1)/(len(nspam) + dim)
 
-        for j in range(dim):
-            for i in range(count):
-                if labels[i] == 0:
-                    if self.px1y0[j] == 0:
-                        self.px1y0[j] = 2.0/(ny +2.0)
-                    else:
-                        self.px1y0[j] += 1.0/ny
-                else:
-                    if self.px1y1[j] == 0:
-                        self.px1y1[j] = 2.0/(y+2.0)
-                    else:
-                        self.px1y1[j] += 1.0/y
+        self.px1y1 = (np.sum(spam, axis=0) + 1)/(len(spam) + dim)
 
-
-        py1x1 = []
-        for i in range(dim):
-                py1x1.append(
-                    self.px1y1[i] * py /
-                    (self.px1y1[i] * py + self.px1y0[i]*pny)
-                )
-
-        self.theta = np.array(py1x1)
 
     def predict(self, matrix):
+        count, dim = matrix.shape
         res = []
         for x in matrix:
-            try:
-                res.append(1/(1+np.exp(-self.theta.dot(x))))
-            except:
-                pdb.set_trace()
+            res.append(np.argmax((self.px1y0.T @ x ,self.px1y1.T @ x)))
         return np.array(res)
+
+
 
 
 def get_words(message):
@@ -99,16 +75,22 @@ def create_dictionary(messages):
     Returns:
         A python dict mapping words to integers.
     """
-
     # *** START CODE HERE ***
     counts = {}
     for message in messages:
-        for word in get_words(message):
+        words = list(dict.fromkeys(get_words(message)))
+        for word in words:
             if word not in counts.keys():
                 counts[word] = 0
             counts[word] += 1
-    return counts
-
+    accepted = {}
+    i = 0
+    words = list(counts.keys())
+    for word in words:
+        if counts[word] >= 5:
+            accepted[word] = i
+            i += 1
+    return accepted
     # *** END CODE HERE ***
 
 
@@ -133,19 +115,13 @@ def transform_text(messages, word_dictionary):
         j-th vocabulary word in the i-th message.
     """
     # *** START CODE HERE ***
-    out = []
-    keys = word_dictionary.keys()
-    for message in messages:
-        wordset = np.zeros(len(keys))
-        i = 0
-        words = get_words(message)
-        for word in keys:
-            if word in words:
-                wordset[i] = word_dictionary[word]
-            i += 1
-        out.append(np.array(wordset))
-    return np.array(out)
-
+    out = np.zeros((len(messages),len(word_dictionary)))
+    for i in range(len(messages)):
+        wordset = get_words(messages[i]) # get the list of words from the message
+        for word in wordset: # iterate through each word in the message
+            if word in word_dictionary: # filter out words not in dictionary
+                out[i][word_dictionary[word]] += 1 # increment accepted words
+    return out
 
     # *** END CODE HERE ***
 
@@ -205,9 +181,10 @@ def get_top_five_naive_bayes_words(model, dictionary):
     keys = list(dictionary.keys())
     res = []
     for x in range(len(keys)):
-        res.append(((np.log(model.px1y1[x]/model.px1y0[x])), x))
+        res.append((np.log(model.px1y1[x])/np.log(model.px1y0[x]), x))
     out = [(prob, keys[x]) for prob, x in sorted(res,
-                                                 reverse=True)[0:4]]
+                                                 reverse=True,
+                                                 key= lambda i: i[0])[0:4]]
     return out
 
 
@@ -231,6 +208,21 @@ def compute_best_svm_radius(train_matrix, train_labels, val_matrix, val_labels, 
         The best radius which maximizes SVM accuracy.
     """
     # *** START CODE HERE ***
+    best = radius_to_consider[0]
+    prev_loss = -20
+    for radius in radius_to_consider:
+        res = svm.train_and_predict_svm(train_matrix, train_labels, val_matrix, radius)
+        loss = 0
+
+        for i in range(len(val_labels)):
+            loss += ((res[i] - val_labels[i])**2)/len(res)
+        if loss < prev_loss:
+            best = radius
+        prev_loss = loss
+
+    return best
+
+
     # *** END CODE HERE ***
 
 
