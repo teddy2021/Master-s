@@ -128,22 +128,25 @@ Thus we have natural parameters:
 \begin{center}
 	\begin{align*}
 		g(n) &= E\left[ y; \eta \right ]\\
-			 &= E\left[ p(y; \eta) \right] \\
-			 &= E\left[ b(y)e^{\eta^TT(y)-a(n)} \right]\\
-			 &= \frac{d}{d \eta}\left( \frac{e^{ln(\lambda)^Ty - \lambda}}{y!}\right )\\
-			 &= \frac{d}{dy}\frac{d}{ln(\lambda)}\left( \frac{e^{ln(\lambda)^Ty-\lambda}}{y!}\right )\\
-			 &= \frac{\frac{d}{dy}\frac{d}{d \lambda}ln(\lambda)^ty -\lambda e^{ln(\lambda)^Ty-\lambda}}
-			 {\frac{d}{dy} \frac{d}{d ln(\lambda)}y! }\\
-			 &= \frac{d}{dy}\frac{d}{dln(\lambda)}
+			 &= E[y;ln(\lambda)]\\
+			 &= E(e^y; \lambda)\\
+			 &=
 	 \end{align*}
 \end{center}
 \subsection{}
 
 \subsection{Question 4}
-The graph show in \ref{fig:Poisson} 
-\begin{figure}[h]
+The graph shown in \ref{fig:Poisson} displays a marked difference between the 
+true value of the dataset, and the predicted value. 
+Were it otherwise, the data would fit closer to a line, however as it stands
+it appears to have something close to a normal distribution in terms of how off
+the data is. 
+This is supported by the clear linear trend of the overall data. 
+It is then clear that the prediction has somee source of error within which 
+results in it being in the ballpark, but still not correct by some margin. 
+\begin{figure}[H]
 	\centering
-	\includegraphics{src/poisson/poisson_valid.png}
+	\includegraphics[width=\textwidth]{src/poisson/poisson_valid.png}
 	\caption{Poisson Regression}
 	\label{fig:Poisson}
 \end{figure}
