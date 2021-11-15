@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+import math
 
 def softmax(x):
     """
@@ -68,6 +69,15 @@ def get_initial_params(input_size, num_hidden, num_output):
     """
 
     # *** START CODE HERE ***
+    var = 1/math.sqrt(input_size)
+    mean = 0
+    W1 = np.random.normal(mean, var, (input_size, num_hidden))
+    W2 = np.random.normal(mean, var, (num_hidden, num_output))
+    b1 = np.zeros((num_hidden))
+    b2 = np.zeros((num_output))
+
+    di = {"lMats": W1, "lBias": b1, "oMats": W2, "oBias": b2}
+    return di
     # *** END CODE HERE ***
 
 def forward_prop(data, labels, params):
@@ -89,6 +99,22 @@ def forward_prop(data, labels, params):
             3. The average loss for these data elements
     """
     # *** START CODE HERE ***
+    layers = params['lMats']
+    bias = params['lBias']
+
+    res = sigmoid(layers[0] * data + bias[0])
+    for x in range(1, len(layers)):
+        res = sigmoid(layers[x] * res + bias[x])
+    yHat = res
+
+    output = params['oMats']
+    bias = params['oBias']
+    res = softmax(output[0] * yHat + bias[0])
+    for x in range(1, len(output)):
+        res = softmax(output[x] * res + bias[x])
+    y = res
+    loss = - np.sum(y * np.log(yHat))
+    return (yHat, y, loss)
     # *** END CODE HERE ***
 
 def backward_prop(data, labels, params, forward_prop_func):
