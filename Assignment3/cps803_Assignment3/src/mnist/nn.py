@@ -102,17 +102,17 @@ def forward_prop(data, labels, params):
     layers = params['lMats']
     bias = params['lBias']
 
-    res = sigmoid(layers[0] * data + bias[0])
+    yHat = np.zeros((len(layers), 1))
+    yHat[0] = sigmoid(layers[1] * data + bias[x])
     for x in range(1, len(layers)):
-        res = sigmoid(layers[x] * res + bias[x])
-    yHat = res
+        yHat = sigmoid(layers[x] * yHat[x-1] + bias[x])
 
     output = params['oMats']
     bias = params['oBias']
-    res = softmax(output[0] * yHat + bias[0])
+    y = np.zeros((len(output,1)))
+    y[0] = softmax(output[0] * yHat + bias[0] )
     for x in range(1, len(output)):
-        res = softmax(output[x] * res + bias[x])
-    y = res
+        y[x] = softmax(output[x] * y[x-1] + bias[x])
     loss = - np.sum(y * np.log(yHat))
     return (yHat, y, loss)
     # *** END CODE HERE ***
