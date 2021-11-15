@@ -4,7 +4,7 @@ import argparse
 
 def softmax(x):
     """
-    Compute softmax function for a batch of input values. 
+    Compute softmax function for a batch of input values.
     The first dimension of the input corresponds to the batch size. The second dimension
     corresponds to every class in the output. When implementing softmax, you should be careful
     to only sum over the second dimension.
@@ -21,6 +21,10 @@ def softmax(x):
         A 2d numpy float array containing the softmax results of shape batch_size x number_of_classes
     """
     # *** START CODE HERE ***
+    lst = []
+    for X in x:
+        lst.append(np.exp(X)/np.sum(x))
+    return np.array(list)
     # *** END CODE HERE ***
 
 def sigmoid(x):
@@ -34,6 +38,7 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
+    return 1/(1+np.exp(-x))
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
@@ -52,12 +57,12 @@ def get_initial_params(input_size, num_hidden, num_output):
     As specified in the PDF, weight matrices should be initialized with a random normal distribution
     centered on zero and with scale 1.
     Bias vectors should be initialized with zero.
-    
+
     Args:
         input_size: The size of the input data
         num_hidden: The number of hidden states
         num_output: The number of output classes
-    
+
     Returns:
         A dict mapping parameter names to numpy arrays
     """
@@ -68,7 +73,7 @@ def get_initial_params(input_size, num_hidden, num_output):
 def forward_prop(data, labels, params):
     """
     Implement the forward layer given the data, labels, and params.
-    
+
     Args:
         data: A numpy array containing the input
         labels: A 2d numpy array containing the labels
@@ -89,7 +94,7 @@ def forward_prop(data, labels, params):
 def backward_prop(data, labels, params, forward_prop_func):
     """
     Implement the backward propegation gradient computation step for a neural network
-    
+
     Args:
         data: A numpy array containing the input
         labels: A 2d numpy array containing the labels
@@ -102,7 +107,7 @@ def backward_prop(data, labels, params, forward_prop_func):
     Returns:
         A dictionary of strings to numpy arrays where each key represents the name of a weight
         and the values represent the gradient of the loss with respect to that weight.
-        
+
         In particular, it should have 4 elements:
             W1, W2, b1, and b2
     """
@@ -113,7 +118,7 @@ def backward_prop(data, labels, params, forward_prop_func):
 def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
     """
     Implement the backward propegation gradient computation step for a neural network
-    
+
     Args:
         data: A numpy array containing the input
         labels: A 2d numpy array containing the labels
@@ -127,7 +132,7 @@ def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
     Returns:
         A dictionary of strings to numpy arrays where each key represents the name of a weight
         and the values represent the gradient of the loss with respect to that weight.
-        
+
         In particular, it should have 4 elements:
             W1, W2, b1, and b2
     """
@@ -160,7 +165,7 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
     return
 
 def nn_train(
-    train_data, train_labels, dev_data, dev_labels, 
+    train_data, train_labels, dev_data, dev_labels,
     get_initial_params_func, forward_prop_func, backward_prop_func,
     num_hidden=300, learning_rate=5, num_epochs=30, batch_size=1000):
 
@@ -173,7 +178,7 @@ def nn_train(
     accuracy_train = []
     accuracy_dev = []
     for epoch in range(num_epochs):
-        gradient_descent_epoch(train_data, train_labels, 
+        gradient_descent_epoch(train_data, train_labels,
             learning_rate, batch_size, params, forward_prop_func, backward_prop_func)
 
         h, output, cost = forward_prop_func(train_data, train_labels, params)
@@ -191,7 +196,7 @@ def nn_test(data, labels, params):
     return accuracy
 
 def compute_accuracy(output, labels):
-    accuracy = (np.argmax(output,axis=1) == 
+    accuracy = (np.argmax(output,axis=1) ==
         np.argmax(labels,axis=1)).sum() * 1. / labels.shape[0]
     return accuracy
 
@@ -207,7 +212,7 @@ def read_data(images_file, labels_file):
 
 def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, plot=True):
     params, cost_train, cost_dev, accuracy_train, accuracy_dev = nn_train(
-        all_data['train'], all_labels['train'], 
+        all_data['train'], all_labels['train'],
         all_data['dev'], all_labels['dev'],
         get_initial_params, forward_prop, backward_prop_func,
         num_hidden=300, learning_rate=5, num_epochs=num_epochs, batch_size=1000
@@ -238,7 +243,7 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, p
 
     accuracy = nn_test(all_data['test'], all_labels['test'], params)
     print('For model %s, got accuracy: %f' % (name, accuracy))
-    
+
     return accuracy
 
 def main(plot=True):
@@ -279,12 +284,12 @@ def main(plot=True):
         'dev': dev_labels,
         'test': test_labels,
     }
-    
+
     baseline_acc = run_train_test('baseline', all_data, all_labels, backward_prop, args.num_epochs, plot)
-    reg_acc = run_train_test('regularized', all_data, all_labels, 
+    reg_acc = run_train_test('regularized', all_data, all_labels,
         lambda a, b, c, d: backward_prop_regularized(a, b, c, d, reg=0.0001),
         args.num_epochs, plot)
-        
+
     return baseline_acc, reg_acc
 
 if __name__ == '__main__':
