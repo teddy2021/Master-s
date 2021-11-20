@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import math
+import pdb
 
 def softmax(x):
     """
@@ -23,9 +24,15 @@ def softmax(x):
     """
     # *** START CODE HERE ***
     lst = []
-    for X in x:
-        lst.append(np.exp(X)/np.sum(x))
-    return np.array(list)
+    X, Y = x.shape
+    for i in range(X):
+        l = []
+        denom = np.sum(np.exp(x[i]))
+        for j in range(Y):
+            l.append(np.exp(x[i][j])/denom)
+        lst.append(l)
+    return np.array(lst)
+
     # *** END CODE HERE ***
 
 def sigmoid(x):
@@ -100,21 +107,33 @@ def forward_prop(data, labels, params):
     """
     # *** START CODE HERE ***
     layers = params['lMats']
-    bias = params['lBias']
-
-    yHat = np.zeros((len(layers), 1))
-    yHat[0] = sigmoid(layers[1] * data + bias[x])
-    for x in range(1, len(layers)):
-        yHat = sigmoid(layers[x] * yHat[x-1] + bias[x])
+    lbias = params['lBias']
 
     output = params['oMats']
-    bias = params['oBias']
-    y = np.zeros((len(output,1)))
-    y[0] = softmax(output[0] * yHat + bias[0] )
-    for x in range(1, len(output)):
-        y[x] = softmax(output[x] * y[x-1] + bias[x])
-    loss = - np.sum(y * np.log(yHat))
-    return (yHat, y, loss)
+    obias = params['oBias']
+
+    # (m,300) = (m, 768) x (768, 300)
+    yHat = sigmoid(
+        data @ layers
+        + lbias )
+
+    # (m, 10) = (m, 300) (300, 10)
+    y = softmax(
+        yHat @ output
+        + obias)
+
+    loss_avg = 0
+
+    l = []
+    for i in range(len(y) - 1):
+        val =- labels[i] * np.log(y[i])
+        if(np.nan in val or np.any(val < 0)):
+            print(i, end='\t')
+        l.append(val/(len(data)))
+
+    loss_avg = sum(l)
+
+    return (yHat, y, loss_avg )
     # *** END CODE HERE ***
 
 def backward_prop(data, labels, params, forward_prop_func):
@@ -138,6 +157,41 @@ def backward_prop(data, labels, params, forward_prop_func):
             W1, W2, b1, and b2
     """
     # *** START CODE HERE ***
+
+    # Steps:
+    # Get output values
+    yHat, y, loss = forward_prop_func(data, labels, params)
+    output = {}
+    #(), (),
+
+    # Get change for output
+    # output derivatives = dj/dw = dj/da * da/dz * dz/dw
+    # dj/da = -label/y
+    # da/dz = sigmoid(1-sigmoid)
+    # dz/dw = a_i
+    dj_da = (-labels/y) # vectorp
+    da_dz = 1/y
+    dz_dw = yHat
+    output_deriv = (dj_da @ da_dz.T @ dz_dw)
+
+    update_output = output_deriv * 1
+    # Pass change back
+    pass_on = dj_da
+
+    # Calculate Change for Layers with Change in previous layer
+    # layer derivative = dj_out/dw * dz_out/da_out * da_dz * dz_dw
+    dadz = yHat @ (1-yHat).T
+    dzdw = data
+    change = pass_on.T @ dadz @ dzdw
+    update_layers = change
+    update_lBias = pass_on
+
+    output['oMats'] =  update_output
+    output['lMats'] =  update_layers
+    output['oBias'] =  loss
+    output['lBias'] =  update_lBias
+
+    return output
     # *** END CODE HERE ***
 
 
@@ -185,6 +239,12 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
     """
 
     # *** START CODE HERE ***
+    avgloss = 0
+    change = []
+    for x in range(0, len(train_data), batch_size):
+        end = x + batch_size
+        change.append(backward_prop_func(train_data[x:end],
+                                         train_labels[x:end], params, forward_prop_func))
     # *** END CODE HERE ***
 
     # This function does not return anything
