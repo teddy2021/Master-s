@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import argparse
 import math
 import pdb
+from datetime import datetime
 
 def softmax(x):
     """
@@ -23,15 +24,9 @@ def softmax(x):
         A 2d numpy float array containing the softmax results of shape batch_size x number_of_classes
     """
     # *** START CODE HERE ***
-    lst = []
-    X, Y = x.shape
-    for i in range(X):
-        l = []
-        denom = np.sum(np.exp(x[i]))
-        for j in range(Y):
-            l.append(np.exp(x[i][j])/denom)
-        lst.append(l)
-    return np.array(lst)
+
+    ex = np.exp(x - np.max(x))
+    return ex/np.sum(ex)
 
     # *** END CODE HERE ***
 
@@ -46,7 +41,7 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
-    return 1/(1+np.exp(-x))
+    return 1./(1. + np.exp(-abs(x)))
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
@@ -80,8 +75,8 @@ def get_initial_params(input_size, num_hidden, num_output):
     mean = 0
     W1 = np.random.normal(mean, var, (input_size, num_hidden))
     W2 = np.random.normal(mean, var, (num_hidden, num_output))
-    b1 = np.zeros((num_hidden))
-    b2 = np.zeros((num_output))
+    b1 = np.zeros((num_hidden,1))
+    b2 = np.zeros((num_output,1))
 
     di = {"lMats": W1, "lBias": b1, "oMats": W2, "oBias": b2}
     return di
@@ -111,29 +106,28 @@ def forward_prop(data, labels, params):
 
     output = params['oMats']
     obias = params['oBias']
-
-    # (m,300) = (m, 768) x (768, 300)
-    yHat = sigmoid(
-        data @ layers
-        + lbias )
-
-    # (m, 10) = (m, 300) (300, 10)
-    y = softmax(
-        yHat @ output
-        + obias)
-
     loss_avg = 0
+    yHat = []
+    y = []
+    for i in range(len(data)):
+        x = data[i].reshape((-1, 1))
 
-    l = []
-    for i in range(len(y) - 1):
-        val =- labels[i] * np.log(y[i])
-        if(np.nan in val or np.any(val < 0)):
-            print(i, end='\t')
-        l.append(val/(len(data)))
+        # z = (m,300) = (m, 768) x (768, 300)
+        yHat.append(sigmoid(
+            (layers.T @ x)
+            + lbias))
 
-    loss_avg = sum(l)
+        # (m, 10) = (m, 300) (300, 10)
+        y.append(softmax((output.T @ yHat[-1]) + obias))
 
-    return (yHat, y, loss_avg )
+
+        # the below is intended for naive use with log, it prevents log of zero by
+        # using a small constant
+        # loss_avg = np.sum( (labels * np.log(y + (10**-10))))/len(data)
+        loss_avg += -np.sum(labels[i] * np.where(labels[i] == 1,
+                                        np.log(y[-1]), 0))/len(data)
+
+    return (np.array(yHat), np.array(y), loss_avg )
     # *** END CODE HERE ***
 
 def backward_prop(data, labels, params, forward_prop_func):
@@ -162,38 +156,73 @@ def backward_prop(data, labels, params, forward_prop_func):
     # Get output values
     yHat, y, loss = forward_prop_func(data, labels, params)
     output = {}
-    #(), (),
 
     # Get change for output
     # output derivatives = dj/dw = dj/da * da/dz * dz/dw
-    # dj/da = -label/y
+    # dj/da = y-label
     # da/dz = sigmoid(1-sigmoid)
     # dz/dw = a_i
-    dj_da = (-labels/y) # vectorp
-    da_dz = 1/y
-    dz_dw = yHat
-    output_deriv = (dj_da @ da_dz.T @ dz_dw)
 
-    update_output = output_deriv * 1
-    # Pass change back
-    pass_on = dj_da
+    out = 0
+    layers = 0
+    lBias = 0
+    oBias = 0
 
-    # Calculate Change for Layers with Change in previous layer
-    # layer derivative = dj_out/dw * dz_out/da_out * da_dz * dz_dw
-    dadz = yHat @ (1-yHat).T
-    dzdw = data
-    change = pass_on.T @ dadz @ dzdw
-    update_layers = change
-    update_lBias = pass_on
+    lm = params['lMats']
+    om = params['oMats']
+    lb = params['lBias']
+    ob = params['oBias']
+    for x in range(len(data)):
+        # Note, the below have reshaping with fortran order in order to
+        # leverage on speed advantages in the BLAS library which numpy relies
+        # on
 
-    output['oMats'] =  update_output
-    output['lMats'] =  update_layers
-    output['oBias'] =  loss
-    output['lBias'] =  update_lBias
+        # Compute the derivative of output error with respect to output
+        dj_da = (- labels[x].reshape(y[x].shape)/y[x]).reshape((-1, 1), order='F')
 
+        # compute the Jacobian of the Softmax, i.e. y_i*(del - y_j); del = {
+        # 0 : i == j
+        # 1 : otherwise}
+        a = y[x].reshape(-1,1)
+        da_dz = np.asfortranarray(np.diagflat(a) - (a @ a.T))
+
+        # compute change of weighted input with respect to weights
+        dz_dw = yHat[x].reshape((-1, 1), order='F')
+
+        # Collect information usd in next layer of back prop
+        # print(dj_da.shape, da_dz.shape)
+        pass_on = (dj_da.T @ da_dz).T
+        oBias += pass_on
+
+        # calculate change for output layer
+        deltao = (pass_on  @ dz_dw.T).T
+
+        # order matrix is a fortran order matrix
+
+        # accumulate change
+        out += np.asfortranarray(deltao)
+
+        # Calculate Change for Layers with Change in previous layer
+        djdz = pass_on
+
+        dzda = om
+
+        dadz = (yHat[x] * (1-yHat[x])).reshape((-1, 1), order='F')
+        dzdw = data[x].reshape((-1, 1), order='F')
+
+        base = (dzda @ djdz) * dadz
+
+        deltal = base @ dzdw.T
+        layers += deltal.T
+
+        lBias += base.sum(axis=1, keepdims=True)
+
+    output['oMats'] = np.asfortranarray(out/len(data))
+    output['lMats'] = np.asfortranarray(layers/len(data))
+    output['oBias'] = np.asfortranarray(oBias)/len(data)
+    output['lBias'] = np.asfortranarray(lBias)/len(data)
     return output
     # *** END CODE HERE ***
-
 
 def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
     """
@@ -217,6 +246,78 @@ def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
             W1, W2, b1, and b2
     """
     # *** START CODE HERE ***
+    output = {}
+    # Steps:
+    # Get output values
+    yHat, y, loss = forward_prop_func(data, labels, params)
+    output = {}
+
+    # Get change for output
+    # output derivatives = dj/dw = dj/da * da/dz * dz/dw
+    # dj/da = y-label
+    # da/dz = sigmoid(1-sigmoid)
+    # dz/dw = a_i
+
+    out = 0
+    layers = 0
+    lBias = 0
+    oBias = 0
+
+    lm = params['lMats']
+    om = params['oMats']
+    lb = params['lBias']
+    ob = params['oBias']
+    for x in range(len(data)):
+        # Note, the below have reshaping with fortran order in order to
+        # leverage on speed advantages in the BLAS library which numpy relies
+        # on
+
+        # Compute the derivative of output error with respect to output
+        dj_da = (- labels[x].reshape(y[x].shape) /
+                 y[x])
+        # compute the Jacobian of the Softmax, i.e. y_i*(del - y_j); del = {
+        # 0 : i == j
+        # 1 : otherwise}
+        a = y[x].reshape(-1,1)
+        da_dz = np.asfortranarray(np.diagflat(a) - (a @ a.T))
+
+        # compute change of weighted input with respect to weights
+        dz_dw = yHat[x].reshape((-1, 1), order='F')
+
+        # Collect information usd in next layer of back prop
+        # print(dj_da.shape, da_dz.shape)
+        pass_on = (dj_da.T @ da_dz).T
+        oBias += pass_on
+
+        # calculate change for output layer
+        deltao = (pass_on  @ dz_dw.T).T + 2 * reg * om
+
+        # order matrix is a fortran order matrix
+
+        # accumulate change
+        out += np.asfortranarray(deltao)
+
+        # Calculate Change for Layers with Change in previous layer
+        djdz = pass_on
+
+        dzda = om
+
+        dadz = (yHat[x] * (1-yHat[x])).reshape((-1, 1), order='F')
+        dzdw = data[x].reshape((-1, 1), order='F')
+
+        base = (dzda @ djdz) * dadz
+
+        deltal = base @ dzdw.T
+        layers += deltal.T + 2 * reg * lm
+
+        lBias += base.sum(axis=1, keepdims=True)
+
+    output['oMats'] = np.asfortranarray(out/len(data))
+    output['lMats'] = np.asfortranarray(layers/len(data))
+    output['oBias'] = np.asfortranarray(oBias)/len(data)
+    output['lBias'] = np.asfortranarray(lBias)/len(data)
+    return output
+
     # *** END CODE HERE ***
 
 def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, params, forward_prop_func, backward_prop_func):
@@ -239,12 +340,40 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
     """
 
     # *** START CODE HERE ***
-    avgloss = 0
     change = []
+    loss = np.zeros(
+        (int(len(train_data)/batch_size),1)
+    )
     for x in range(0, len(train_data), batch_size):
         end = x + batch_size
-        change.append(backward_prop_func(train_data[x:end],
-                                         train_labels[x:end], params, forward_prop_func))
+        # note, the below includes a /255 to normalize the data. This just
+        # provides some buffer for the log and softmax functions to further
+        # avoid overflow.
+        res = backward_prop_func(train_data[x:end]/255,
+            train_labels[x:end], params, forward_prop_func)
+        change.append(res)
+
+
+
+    lMatrix = 0
+    oMatrix = 0
+    lBias = 0
+    oBias = 0
+    iterations = len(train_data/batch_size)
+
+    for x in range(len(change)):
+        lMatrix += change[x]['lMats']/iterations
+        oMatrix += change[x]['oMats']/iterations
+        lBias += change[x]['lBias']/iterations
+        oBias += change[x]['oBias']/iterations
+
+    lb =  params['lBias']
+    ob =  params['oBias']
+
+    params['lMats'] -= lMatrix * learning_rate
+    params['oMats'] -= oMatrix * learning_rate
+    params['lBias'] -= lBias.reshape(lb.shape) * learning_rate
+    params['oBias'] -= oBias.reshape(ob.shape) * learning_rate
     # *** END CODE HERE ***
 
     # This function does not return anything
@@ -253,19 +382,20 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
 def nn_train(
     train_data, train_labels, dev_data, dev_labels,
     get_initial_params_func, forward_prop_func, backward_prop_func,
-    num_hidden=300, learning_rate=5, num_epochs=30, batch_size=1000):
+    num_hidden=300, learning_rate=5, num_epochs=30, batch_size=1000, num_out=10):
 
     (nexp, dim) = train_data.shape
 
-    params = get_initial_params_func(dim, num_hidden, 10)
+    params = get_initial_params_func(dim, num_hidden, num_out)
 
     cost_train = []
     cost_dev = []
     accuracy_train = []
     accuracy_dev = []
     for epoch in range(num_epochs):
+        print(epoch, ":", datetime.now())
         gradient_descent_epoch(train_data, train_labels,
-            learning_rate, batch_size, params, forward_prop_func, backward_prop_func)
+        learning_rate, batch_size, params, forward_prop_func, backward_prop_func)
 
         h, output, cost = forward_prop_func(train_data, train_labels, params)
         cost_train.append(cost)
@@ -296,7 +426,35 @@ def read_data(images_file, labels_file):
     y = np.loadtxt(labels_file, delimiter=',')
     return x, y
 
+def dummy_params(dim, n_hid, n_out):
+    print(dim, n_hid, n_out)
+    dic = {}
+    dic['lMats'] = np.ones((dim, n_hid))
+    dic['oMats'] = np.ones((n_hid,n_out))
+    dic['lBias'] = np.ones((n_hid, 1))
+    dic['oBias'] = np.ones((n_out, 1))
+    return dic
+
 def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, plot=True):
+#    data = np.array([[0,0],
+#                     [1,0],
+#                     [1,1],
+#                     [0,1]])
+#    labels = np.copy(data)
+#
+#    params = get_initial_params(data.shape[-1], 3, 2)
+#
+#    params, cost_train, cost_dev, accuracy_train, accuracy_dev = nn_train(
+#        data, labels,
+#        data, labels,
+#        dummy_params, forward_prop, backward_prop_func,
+#        num_hidden=3, learning_rate=.5, num_epochs=5, batch_size=2, num_out=2
+#    )
+#
+#
+#    accuracy= nn_test(data, labels, params)
+#    print('Got', accuracy, 'accuracy for dummy run')
+#    exit()
     params, cost_train, cost_dev, accuracy_train, accuracy_dev = nn_train(
         all_data['train'], all_labels['train'],
         all_data['dev'], all_labels['dev'],
@@ -370,7 +528,6 @@ def main(plot=True):
         'dev': dev_labels,
         'test': test_labels,
     }
-
     baseline_acc = run_train_test('baseline', all_data, all_labels, backward_prop, args.num_epochs, plot)
     reg_acc = run_train_test('regularized', all_data, all_labels,
         lambda a, b, c, d: backward_prop_regularized(a, b, c, d, reg=0.0001),
