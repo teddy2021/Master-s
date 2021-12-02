@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import math
-import pdb
-from datetime import datetime
 
 def softmax(x):
     """
@@ -24,10 +22,8 @@ def softmax(x):
         A 2d numpy float array containing the softmax results of shape batch_size x number_of_classes
     """
     # *** START CODE HERE ***
-
-    ex = np.exp(x - np.max(x))
-    return ex/np.sum(ex)
-
+    ex = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return ex/ex.sum(axis=1, keepdims=True)
     # *** END CODE HERE ***
 
 def sigmoid(x):
@@ -101,37 +97,24 @@ def forward_prop(data, labels, params):
             3. The average loss for these data elements
     """
     # *** START CODE HERE ***
-    layers = params['lMats']
-    lbias = params['lBias']
+    W1 = params['lMats']
+    B1 = params['lBias']
 
-    output = params['oMats']
-    obias = params['oBias']
+    W2 = params['oMats']
+    B2 = params['oBias']
 
-    loss_avg = 0
-    activations = []
-    results = []
-    for i in range(len(data)):
-        x = data[i].reshape((1, -1))
-        # z = (m,300) = (m, 768) x (768, 300)
-        z1 = x @ layers
-        z1 += lbias
-        activations.append(sigmoid(z1))
-        # (m, 10) = (m, 300) (300, 10)
-        z2 = activations[-1] @ output
-        z2 += obias
-        results.append(softmax(z2))
+    z1 = data.dot(W1) + B1
+    activation = sigmoid(z1)
+    z2 = activation.dot(W2) + B2
+    result = softmax(z2)
 
 
-        # the below is intended for naive use with log, it prevents log of zero by
-        # using a small constant
-        # loss_avg = np.sum( (labels * np.log(y + (10**-10))))/len(data)
-        loss_avg += -np.sum(labels[i] * np.where(labels[i] == 1,
-                                        np.log(results[-1]), 0))/len(data)
-    a = np.array(results)
-    b = np.array(activations)
-    res = np.array(results).reshape(a.shape[0], a.shape[2])
-    yHat = np.array(activations).reshape(b.shape[0], b.shape[2])
-    return (yHat, res, loss_avg )
+    # the below is intended for naive use with log, it prevents log of zero by
+    # using a small constant
+    # loss_avg = np.sum( (labels * np.log(y + (10**-10))))/len(data)
+    loss_avg = -np.sum(labels * np.where(labels == 1,
+                                    np.log(result), 0))/len(data)
+    return (activation, result, loss_avg )
     # *** END CODE HERE ***
 
 def backward_prop(data, labels, params, forward_prop_func):
@@ -156,31 +139,62 @@ def backward_prop(data, labels, params, forward_prop_func):
     """
     # *** START CODE HERE ***
     # Steps:
-    # Get output values
-    yHat, y, loss = forward_prop_func(data, labels, params)
+    # Get output values of the forward pass
+    sigmoid_out, softmax_out, loss_avg = forward_prop_func(data, labels, params)
     output = {}
 
-    om = 0
-    lm = 0
-    ob = 0
-    lb = 0
-    for x in range(len(data)):
-        curY = y[x].reshape((1,-1), order='F') # 1x10
-        curYHat = yHat[x].reshape((1,-1), order='F') # 1xn
-        # When the derivations are done, and then simplified for the output,
-        # the result is yHat - y for the output error with respect to z.
-        dout =  curY - labels[x].reshape(curY.shape) # 1x10
-        om += curYHat.T @ dout # nx10
-        ob += dout # 1xn
-        # push the gradient backwards through the matrix to get to the output
-        # matrix.
-        dhid = dout @ params['oMats'].T # 1xm
-        lm += data[x].reshape(1,-1, order='F').T @ dhid # mxn
-        lb += dhid # 1xm
-    output ['lMats'] = lm/len(data)
-    output ['oMats'] = om/len(data)
-    output ['lBias'] = lb/len(data)
-    output ['oBias'] = ob/len(data)
+    # dj/dz = yH - true
+    # the gradient of cost w.r.t. to the input is the activation - the
+    # label
+
+    # dj/dz = dj/dyH dyH/dZ
+    # dj/da = true/yH
+    # The gradient of the cost w.r.t. the activation is the label/the
+    # activation
+    # da/dz = yH_i(d - yH_j), where d = {1 if i == j; 0 otherwise}
+    # the gradient of the activation w.r.t. the input is a jacobian matrix,
+    # where each element, D_i,j is defined to be the ith activation * (1{i==j}
+    # - the jth activation). This gives a matrix where the diagonals are
+    # y_i(1-y_i), and the offdiagonal values are -y_i*y_j
+    gradient = softmax_out - labels
+
+    # dj/dw = (dz/dw).T dj/dz
+    # the gradient w.r.t. the weights is the transpose of the input times the
+    # gradient of the cost w.r.t. the input
+    grad_out_weights =  sigmoid_out.T @ gradient
+
+    # dj/db = (dz/db).T dj/dz, but dj/db = 1
+    # similarly the gradient of cost w.r.t. the biases is simply the gradient,
+    # since the derivative of the input w.r.t. the biases is 1
+    grad_out_bias = gradient.sum(axis=0, keepdims=True)
+
+    # dj/dz_i =( dj/dz_o dz_o/dz_i) (haddamard) (da_i/dz_i)
+    # the gradient of the cost w.r.t. the input of the hidden layer is the
+    # gradaient of the cost w.r.t. the input of the output layer multiplied by
+    # the transpose of the weight matrix for the output layer, all of which is
+    # multiplied (via Schur or Haddamard product) by the derivative of the
+    # sigmoid function w.r.t to the inputs (i.e. the gradient of the hidden
+    # layer's activation w.r.t. the hidden layer's inputs)
+    gradient = np.multiply(
+        gradient @ params['oMats'].T,
+        np.multiply(sigmoid_out, 1-sigmoid_out)
+    )
+
+    # dj/dw_i = (dz_i/dw_i).T dj/dz_i
+    # the gradient of the hidden layer's weights is the input (data)
+    # transposed, and multiplied by the above gradient
+    grad_hidden_weights = data.T @ gradient
+
+    # dj/db_i = (dz_i/db_i).T dj/dz_i, but dj/db_i = 1
+    # similarly to the output layer's bias, the hidden layer's gradient w.r.t.
+    # the hidden layer's bias is the gradient, since the derivative of the
+    # input w.r.t. the bias is 1
+    grad_hidden_bias = gradient.sum(axis=0, keepdims=True)
+
+    output['lMats'] = grad_hidden_weights/len(data)
+    output['oMats'] = grad_out_weights/len(data)
+    output['lBias'] = grad_hidden_bias/len(data)
+    output['oBias'] = grad_out_bias/len(data)
 
     return output
     # *** END CODE HERE ***
@@ -207,36 +221,10 @@ def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
             W1, W2, b1, and b2
     """
     # *** START CODE HERE ***
-    output = {}
-    yHat, y, loss = forward_prop_func(data, labels, params)
-    output = {}
-    out = 0
-
-    layers = 0
-    lBias = 0
-    oBias = 0
-
-    om = 0
-    lm = 0
-    ob = 0
-    lb = 0
-    for x in range(len(data)):
-        curY = y[x].reshape((1,-1), order='F') # 1x10
-        curYHat = yHat[x].reshape((1,-1), order='F') # 1xn
-        dout =  curY - labels[x].reshape(curY.shape) # 1x10
-        om += curYHat.T @ dout + params['oMats'] # nx10
-        ob += dout # 1xn
-
-        dhid = dout @ params['oMats'].T # 1xm
-        lm += data[x].reshape(1,-1, order='F').T @ dhid + params['lMats']# mxn
-        lb += dhid # 1xm
-
-    output['oMats'] = om/len(data)
-    output['lMats'] = lm/len(data)
-    output['oBias'] = ob/len(data)
-    output['lBias'] = lb/len(data)
+    output = backward_prop(data, labels, params, forward_prop_func)
+    output['lMats'] += 2 * reg * params['lMats'] / len(data)
+    output['oMats'] += 2 * reg * params['oMats'] / len(data)
     return output
-
     # *** END CODE HERE ***
 
 def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, params, forward_prop_func, backward_prop_func):
@@ -259,37 +247,14 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
     """
 
     # *** START CODE HERE ***
-    change = []
-    loss = np.zeros(
-        (int(len(train_data)/batch_size),1)
-    )
     for x in range(0, len(train_data), batch_size):
         end = x + batch_size
-        # note, the below includes a /255 to normalize the data. This just
-        # provides some buffer for the log and softmax functions to further
-        # avoid overflow.
-        res = backward_prop_func(train_data[x:end]/255,
+        res = backward_prop_func(train_data[x:end],
             train_labels[x:end], params, forward_prop_func)
-        change.append(res)
-
-
-
-    lMatrix = 0
-    oMatrix = 0
-    lBias = 0
-    oBias = 0
-    iterations = len(train_data)/batch_size
-
-    for x in range(len(change)):
-        lMatrix += change[x]['lMats']
-        oMatrix += change[x]['oMats']
-        lBias += change[x]['lBias']
-        oBias += change[x]['oBias']
-
-    params['lMats'] -= lMatrix * learning_rate/iterations
-    params['oMats'] -= oMatrix * learning_rate/iterations
-    params['lBias'] -= lBias * learning_rate/iterations
-    params['oBias'] -= oBias * learning_rate/iterations
+        params['lMats'] -= res['lMats'] * learning_rate
+        params['oMats'] -= res['oMats'] * learning_rate
+        params['lBias'] -= res['lBias'] * learning_rate
+        params['oBias'] -= res['oBias'] * learning_rate
     # *** END CODE HERE ***
 
     # This function does not return anything
@@ -309,7 +274,6 @@ def nn_train(
     accuracy_train = []
     accuracy_dev = []
     for epoch in range(num_epochs):
-        print(epoch, ': ', datetime.now(), sep='')
         gradient_descent_epoch(train_data, train_labels,
         learning_rate, batch_size, params, forward_prop_func, backward_prop_func)
 
@@ -366,7 +330,7 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, p
 #        data, labels,
 #        data, labels,
 #        dummy_params, forward_prop, backward_prop_func,
-#        num_hidden=3, learning_rate=5, num_epochs=15, batch_size=2, num_out=2
+#        num_hidden=2, learning_rate=5, num_epochs=15, batch_size=2, num_out=2
 #    )
 #    print(params)
 #
@@ -380,6 +344,10 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, p
         get_initial_params, forward_prop, backward_prop_func,
         num_hidden=300, learning_rate=5, num_epochs=num_epochs, batch_size=1000
     )
+    acc = nn_test(all_data['train'], all_labels['train'], params)
+    print("For model", name, "got accuracy on training of", acc )
+    acc = nn_test(all_data['dev'], all_labels['dev'], params)
+    print("For model", name, "got accuracy on dev of", acc)
 
     t = np.arange(num_epochs)
 
@@ -407,6 +375,8 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs, p
     accuracy = nn_test(all_data['test'], all_labels['test'], params)
     print('For model %s, got accuracy: %f' % (name, accuracy))
 
+    for x in params.keys():
+        np.savetxt(name + '_params_' + x + '.txt', params[x])
     return accuracy
 
 def main(plot=True):
@@ -452,7 +422,19 @@ def main(plot=True):
         lambda a, b, c, d: backward_prop_regularized(a, b, c, d, reg=0.0001),
         args.num_epochs, plot)
 
-    return baseline_acc, reg_acc
+    paras = ['lMats','oMats','lBias','oBias']
+    fileends = ['params_lMats.txt', 'params_oMats.txt', 'params_lBias.txt', 'params_oBias.txt']
+    baselines = {}
+    reguarizeds = {}
+    for x in range(4):
+        baselines[paras[x]] = np.loadtxt('baseline_' + fileends[x])
+        reguarizeds[paras[x]] = np.loadtxt('regularized_' + fileends[x])
+
+    base_acc = nn_test(all_data['test'], all_labels['test'], baselines)
+    regular_acc = nn_test(all_data['test'], all_labels['test'], reguarizeds)
+    print("Got", base_acc, "for the accuracy with baseline parameters, and",
+          regular_acc, 'with regularized parametrs')
+ #   return baseline_acc, reg_acc
 
 if __name__ == '__main__':
     main()
