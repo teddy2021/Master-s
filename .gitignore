@@ -1,2 +1,7 @@
 **/__MACOSX/
 **/__pycache*
+**.fls
+**.log
+**.synctex.gz
+**.aux
+**.fdb_latexmk
