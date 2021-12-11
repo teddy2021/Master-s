@@ -64,11 +64,13 @@ class SegDataset(Dataset):
         return len(self.img_labels)
 
     def __getitem__(self, idx):
-        image = read_image(self.img_labels.iloc[idx, 0])
-        label = read_image(self.img_labels.iloc[idx, 1])
-
+        image = read_image(self.img_labels.iloc[idx, 0]).float()
+        label = read_image(self.img_labels.iloc[idx, 1]).float()
+        print("image:",self.img_labels.iloc[idx,0],":",image.shape)
+        print("label:",self.img_labels.iloc[idx,1],":",label.shape)
+        print()
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
-        return image.float(), label
+        return image, label

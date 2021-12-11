@@ -55,6 +55,7 @@ class SegNetwork():
         loss = []
         res = []
         for x, lx in self.data:
+            print(x.shape)
             print(lx.shape)
             result = self.unet(x)
             loss.append(self.loss(result, lx))
