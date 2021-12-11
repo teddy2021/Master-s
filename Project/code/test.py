@@ -1,4 +1,4 @@
-import Unet
+import UNet.Unet as Unet
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 import os
@@ -30,9 +30,10 @@ class CustomDataset(Dataset):
 
 
 net = Unet.Unet([4,8,16,32,64,128,256], [256,128,64,32,16,8])
-data = CustomDataset('./test.csv', '.')
+data = CustomDataset('UNet/test.csv', 'UNet/')
 dataset = DataLoader(data)
 a,b = next(iter(dataset))
+print(a.shape)
 res = net.forward(a)
 plt.imshow(res[0].T.detach().numpy())
 plt.show()
