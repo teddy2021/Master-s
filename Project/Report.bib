@@ -1,0 +1,55 @@
+@techreport{shapenet2015,
+  title       = {{ShapeNet: An Information-Rich 3D Model Repository}},
+  author      = {Chang, Angel X. and Funkhouser, Thomas and Guibas, Leonidas and Hanrahan, Pat and Huang, Qixing and Li, Zimo and Savarese, Silvio and Savva, Manolis and Song, Shuran and Su, Hao and Xiao, Jianxiong and Yi, Li and Yu, Fisher},
+  number      = {arXiv:1512.03012 [cs.GR]},
+  institution = {Stanford University --- Princeton University --- Toyota Technological Institute at Chicago},
+  year        = {2015}
+}
+
+@misc{Binvox,
+  author = {Farid Yagubbayli},
+  title = {Binvox},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/faridyagubbayli/binvox}},
+  commit = {cb6044f403d91c6aefdbfd18b5f8c0308ebf5254}
+}
+
+@misc{UNet,
+	author = {Aman Arora},
+	title = {U-Net: A Pytorch Implementation in 60 Lines of Code},
+	year = {2020},
+	publisher = {Github}
+	howpublished = {\url{https://amaarora.github.io/2020/09/13/unet.html#the-encoder}},
+}
+
+@article{Angermann2019,
+   abstract = {Convolutional neural networks are state-of-the-art for various segmentation
+tasks. While for 2D images these networks are also computationally efficient,
+3D convolutions have huge storage requirements and therefore, end-to-end
+training is limited by GPU memory and data size. To overcome this issue, we
+introduce a network structure for volumetric data without 3D convolution
+layers. The main idea is to include projections from different directions to
+transform the volumetric data to a sequence of images, where each image
+contains information of the full data. We then apply 2D convolutions to these
+projection images and lift them again to volumetric data using a trainable
+reconstruction algorithm. The proposed architecture can be applied end-to-end
+to very large data volumes without cropping or sliding-window techniques. For a
+tested sparse binary segmentation task, it outperforms already known standard
+approaches and is more resistant to generation of artefacts.},
+   author = {Christoph Angermann and Markus Haltmeier},
+   doi = {10.1007/978-3-030-33327-0_19},
+   isbn = {9783030333263},
+   issn = {16113349},
+   journal = {Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics)},
+   keywords = {Biomedical imaging,Deep learning,Magnetic resonance angiography,U-net,Volumetric segmentation},
+   month = {10},
+   pages = {158-166},
+   publisher = {Springer},
+   title = {Random 2.5D U-net for Fully 3D Segmentation},
+   volume = {11794 LNCS},
+   url = {https://arxiv.org/abs/1910.10398v1},
+   year = {2019},
+}
+

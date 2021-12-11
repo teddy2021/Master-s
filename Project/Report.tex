@@ -1,0 +1,142 @@
+\documentclass{article}
+\author{Kody Manastyrski}
+\title{cps8215 Final Project Report: 3D Model Creation from 2D Images}
+\date{December 2021}
+
+\usepackage{textcomp}
+
+\begin{document}
+
+\maketitle
+\section{Introduction}
+
+In 3D graphics, models are used to represent the surface (or total volume) of an
+object. 
+These models are often encoded as either polygons (defined as vertices,
+faces, and normals) or as voxels. 
+Creating a model can be a time consuming process, especially when the model has
+small intricate details.
+There exist a number of neural network based solutions to reconstruct models from
+images in order to streamline this process, however no relationship between
+quantity of images and quality of model has been demonstrated. 
+To this end, we examine the relationship of sparsity of images and accuracy of
+model when using a neural network. 
+
+Similar work has been done in medical imaging in order to segment organs, and 
+reconstruct structures within the human body given sinogram data. 
+This work generally begins with a 3D model, and works its way to the 2D 
+segmentation. 
+Such work(\cite{Angermann2019}) was what inspired this investigation, initially, since working in 2D
+simplifies the model, and if a segmentation of the parts of interest can be 
+obtained, then the 3D model of the actual parts is easily created and 
+subsequently explored by physicians and medical specialists. 
+However, this interest can extend further, enabling people such as 3D artists to
+gather image data on-site and create models with ease. 
+
+The work will proceed as follows: In section 2 the nature of the problem is 
+outlined, and a description of the data is provided. 
+In section 3 we discuss the methodology used to obtain a solution.
+In section 4 we detail the results obtained from this investigation.
+Finally in section 5 we discuss the code used.
+
+\section{Problem and Dataset}
+In this section we discuss the problem in detail, and what dataset is used as a
+stand in for real world application.
+
+The problem is twofold. 
+What data is appropriate for the purpose of creating a 
+3D model, and how to obtain it from a 2D image. 
+The data required should in some way display properties of the object that can
+be translated into a model. 
+Such properties could be depth (such as what a sinogram displays), size, 
+or silhouette. 
+In the case of depth, the reconstruction has already been implemented a number of
+times in medical imaging, and with significant accuracy. 
+Size and silhouette represent properties that are more readily available to the
+common person. 
+Silhouette, in fact, has been explored a number of times with other 
+convolutional neural networks where it has been termed segmentation. 
+Size, however, has yet to be used for this purpose. 
+In this case the size would have to be relative to the object itself. 
+Another term for this would be proportion. 
+With a number of images it would be possible to determine the relative size of 
+a portion of an object with relation to the rest of it. 
+
+The dataset selected for this purpose was the ShapeNetv2 (\cite{shapenet2015}) dataset, which is a collaborative effort between Princeton, Stanford, and TTIC\@. 
+This dataset contains 368,876 models in both Wavefront (obj) and Binvox format.
+A subset of 2678 models include screenshots, ranging in count from 3 to 14 of
+various perspectives. 
+At minimum these screenshots view the model from the positive x, y, and z axes
+separately, and at maximum the screenshots describe a rotation of the object about
+the y axis, where the vantage point is roughly 45\textdegree up from horizontal,
+focusing on the origin (Note, the origin also coincides with the centre of the
+object in the screenshot).
+
+\section{Methods and Models}
+
+In this section the Methodology and Models are described.
+
+As mentioned above, 3D objects are stored primarily in 2 formats. 
+Ideally the model would output to an obj format, since that is a common plain text
+format often used for interchange and for teaching. 
+This would be computationally difficult, since computing a model in that format
+requires computing voronoi diagrams in order to keep the space usage of the 
+model to a minimum. 
+Alternatively, computing the model as a grid of voxels is simpler computationally
+but more expensive in memory use, since a large portion of the data would be 
+relegated to space that is not occupied by the model. 
+For example, reading in one of the binvox files nets a cube grid of side length
+128, while reading just the model voxels gives a varying, but significantly 
+smaller representation, usually of size $3*10^{3}$ total volume. 
+Voxels are what was decided to be used as an intermediary, since the Binvox
+format is much more unique in model encoding whereas encoding a Wavefront can 
+result in a number of distinct but correct representations.
+This has the added benefit of making comparison for loss calculation simple. 
+
+The next problem that needs addressing is how to structure the network. 
+For the initial inputs, those of the 2D images, a UNet structure is used to 
+create segmentations of the models. 
+This is trivial for the network to do for two reasons: the network is well suited
+to the task, and the images have very little noise in the background of the model.
+These segmentations would then be treated as sides on a cube, in order to create
+a flat projection of the 3D object, where intermediary images (such as those from
+the aforementioned rotation) would be overlain with their adjacent images. 
+The network would then have the responsibility of back projecting these images
+onto the grid to create an occupancy grid which represents the final voxel grid.
+
+At a higher level of abstraction the overall network would be structured as a single
+input network with a single output. 
+Internally it would have a batching phase which would place the segmentations onto
+the sides of a cube as described above, and feed that into the output network.
+Thus the network was the concatenation of two independent networks. 
+One to pro-process the data, and one to actually run the data. 
+This was done in order to save users the need to segment their image data.
+The networks themselves use Adam to optimize the weight parameters, since it was
+determined that this would cut down on computational time.
+The final output would then be compared to the respective model using mean square 
+error to calculate loss.
+
+
+\section{Results}
+
+In this section we detail the Results, and what went wrong.
+
+The model has no results, as of writing. 
+Issues with transforming the data to properly train the network arose. 
+Specifically the segmentation ground truth generation process accidentally 
+overwrote the original files multiple times. 
+This meant that the dataset was considered corrupted, wiped, and restored multiple
+times. 
+Each wipe cost over an hour of time, and each restore cost a similar amount of
+time. 
+The ground truth data was intended to be generated by the command line tool 
+`imagemagick', which specializes in manipulating pictures. 
+Because of the lost time trying to get segmentation ground truths, and subsequently
+the lack of segmentations to feed into the final phase of the network, no results
+were obtained. 
+
+\bibliographystyle{acm}
+\nocite{*}
+\bibliography{Report}
+
+\end{document}
