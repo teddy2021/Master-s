@@ -1,0 +1,96 @@
+\documentclass{article}
+
+\author{Kody Manastyrski}
+\date{January 2022}
+\title{CP 8319 Assignment 1}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+
+\begin{document}
+
+\maketitle
+
+\section{Question 1}
+\subsection{A}
+The following matrix shows the values of $r_s$, and is treated as a lookup table.
+\[
+\begin{bmatrix}
+	0 & 0 & 0 & 0 \\
+	-5 & -1 & 0 & 1 \\
+	0 & 0 & 1 & 5 \\
+	0 & 0 & 0 & 0
+\end{bmatrix}
+\]
+Note: Here the $r_g$ and $r_s$ values are included.
+
+Below is the values for each square (i.e. shortened form for the answer), 
+followed by the work to obtain them.
+\[
+\begin{bmatrix}
+	6 & 6 & 6 & 6 \\
+	-5 & 5 & 6 & 6 \\
+	6 & 6 & 6 & 6 \\
+	6 & 6 & 6 & 6
+\end{bmatrix}
+\]
+
+\begin{table}[H]
+\begin{tabular}{|l|c|r|}
+	\hline
+	Cell & Values on Path (Self included) & Total\\
+	\hline
+	1 & 0 + 0 + 0 + 0 + 1 + 5 & 6\\
+	2 & 0 + 0 + 0 + 1 + 5 & 6 \\
+	3 & 0 + 0 + 1 + 5 & 6 \\
+	4 & 0 + 1 + 5 & 6 \\
+	5 & -5 & -5 \\
+	6 & -1 + 0 + 1 + 5 & 5 \\
+	7 & 0 + 1 + 5 & 6 \\
+	8 & 1 + 5 & 6 \\
+	9 & 0 + 0 + 1 + 5 & 6 \\
+	10 & 0 + 1 + 5 & 6 \\
+	11 & 1 + 5 & 6 \\
+	12 & 0 + 0 + 0 + 1 + 5 & 6 \\
+	13 & 0 + 0 + 0 + 0 + 1 + 5 & 6 \\
+	14 & 0 + 0 + 0 + 0 + 0 + 1 + 5 & 6 \\
+	15 & 0 + 0 + 0 + 0 + 0 + 0 + 1 + 5 & 6 \\
+	16 & 0 + 0 + 0 + 0 + 0 + 0 + 0 + 1 + 5 & 6 \\
+	\hline
+\end{tabular}
+\end{table}
+
+
+\subsection{B}
+\[
+\begin{bmatrix}
+	18 & 16 & 14 & 12 \\
+	-3 & 13 & 12 & 10 \\
+	14 & 12 & 10 & 7 \\
+	16 & 18 & 20 & 22
+\end{bmatrix}
+\]
+
+\subsection{C}
+\[
+	V^{\pi}_{new[i,j]} = (c +\gamma V^{\pi}_{old[i,j]}) + \displaystyle\sum^{|\mathfrak{P}|}_{p \in \mathfrak{P}, x = 0} c + \gamma^x V^{\pi}_{old[p]}
+\]
+Where $[i,j]$ is the indices of the $V^{\pi}_{old}$ table, and $\mathfrak{P}$ is the ordered sequence of indices for the optimal path from the next step in the path starting at $[i,j]$.
+For example, with the above new, starting at $[i=0,j=0]$ we have $\mathfrak{P}=
+\{[1,0], [2,0], [3,0],[3,1]\}$ assuming indices start at 0, are in (row, column)
+order, and grow moving to the right for rows, and down for columns.
+Note that the x goes from 0 to the count of elements in the pathset, while p is
+just the indices at each xth step.
+\end{document}
+
+\subsection{D}
+Supposing that the gridworld now has $r_s = 2 \forall r$ then the world changes
+to reward the longest path, since all cells have the same reward value.
+On the other hand, if the world merely adds 2 to the existing old rewards, then 
+the gridworld disincentives the terminal states, and incentives moving away
+from the terminals. 
+In the former case, the shaded squares being part of all squares means they are
+valued as 2.
+In the latter case, the shaded squares have a value of -3 for square 5, and 7 for
+square 12.
