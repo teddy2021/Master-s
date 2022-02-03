@@ -56,7 +56,26 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
+	print("\n\t" + "-"*(37 + (len(policy) * 2 + 3)))
+	print("\tBeginning Policy Evaluation on Policy", policy)
+	print("\t" + "-"*(37 + (len(policy) * 2 + 3)))
+	cost = 1
+	step = 0
+	rewards = [0] * nS # value tracker respective to each state
+	while cost > tol:
+		cost = 0
+		for i in list(P.keys()):
+			reward = P[i][policy[i]][0][2] # get the reward for the state
+			val = rewards[i] # get the value for the state
+			rewards[i] += reward * (gamma ** step) # update the value for the state
+			cost = max(cost, abs(rewards[i] - val)) # update change
+		step += 1
 
+	value_function = np.array(rewards)
+
+	print("\t" + "-"*(44 + (len(str(value_function)) + 3)))
+	print("\tEnding Policy Evaluation with value function", value_function)
+	print("\t" + "-"*(44 + (len(str(value_function)) + 3)))
 	############################
 	return value_function
 
@@ -85,7 +104,22 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
-
+	print("\n\t" + '-' * (44 + len(str(value_from_policy))))
+	print("\tStarting Policy Update With Value", value_from_policy)
+	print("\t" + '-' * (44 + len(str(value_from_policy))))
+	for state_s in list(P.keys()):
+		value = value_from_policy[state_s]
+		reward = P[state_s][policy[state_s]][0][2]
+		state_max = 0
+		for state_t in list(P[state_s].keys()):
+			max_reward = P[state_s][state_max][0][2]
+			cur_reward = P[state_s][state_t][0][2]
+			if(max(max_reward, cur_reward) != max_reward):
+				state_max = state_t
+		new_policy[state_s] = state_max
+	print("\t" + '-' * (47 + len(str(new_policy))))
+	print("\tEnding Policy Update With New Policy", new_policy)
+	print("\t" + '-' * (47 + len(str(new_policy))))
 
 	############################
 	return new_policy
@@ -114,10 +148,28 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
+	cost = 100
+	i = 0
+	while cost > tol:
+		if(cost == 100):
+			cost = 0
+		policy_old = policy
+		value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
+		policy = policy_improvement(P, nS, nA, policy_evaluation(P, nS, nA, policy, gamma, tol) , policy, gamma)
+		value_funciton = policy_evaluation(P, nS, nA, policy, gamma, tol)
+		cost = max(cost, np.sum(abs(policy_old - policy)))
+		print("\tCost at iteration", str(i) + ":", cost)
 
+
+
+	print("-" * (36+len(str(policy))))
+	print("Ending Policy Iteration with Policy", policy)
+	print("-" * (36+len(str(policy))))
 
 	############################
 	return value_function, policy
+
+
 
 def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	"""

@@ -82,15 +82,32 @@ For example, with the above new, starting at $[i=0,j=0]$ we have $\mathfrak{P}=
 order, and grow moving to the right for rows, and down for columns.
 Note that the x goes from 0 to the count of elements in the pathset, while p is
 just the indices at each xth step.
-\end{document}
 
 \subsection{D}
 Supposing that the gridworld now has $r_s = 2 \forall r$ then the world changes
 to reward the longest path, since all cells have the same reward value.
 On the other hand, if the world merely adds 2 to the existing old rewards, then 
 the gridworld disincentives the terminal states, and incentives moving away
-from the terminals. 
-In the former case, the shaded squares being part of all squares means they are
-valued as 2.
-In the latter case, the shaded squares have a value of -3 for square 5, and 7 for
-square 12.
+from the terminals (at least initially).
+The values of the shaded squares are then $\{v \in V^{\pi}_{new}\}$, when adding 2 to
+any given square, and $2*|\mathfrak{P}|$ when setting all squares to 2.
+
+\subsection{E}
+Yes, the optimal policy in fact does change as soon as gamma is not 1, and not 0.
+This puts a timer and an upper limit on the point value, so moving fast and 
+terminating quickly is incentivised, rather than meandering and accumulating 
+further points by lengthening the path.
+
+\subsection{F}
+\[ r_s = 
+	\begin{bmatrix}
+		1 & 2 & 3 & 4 \\
+		-5 & 10 & -5 & 5 \\
+		10 & -5 & 0 & 5\\
+		4 & 3 & 2 & 1
+	\end{bmatrix}
+\]
+This assumes that "there are" refers to the logical "there exists", and thus some
+squares terminate at cell 5, and some at cell 12.
+
+\end{document}
