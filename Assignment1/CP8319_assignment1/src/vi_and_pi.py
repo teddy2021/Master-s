@@ -56,12 +56,8 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
-	print("\n\t" + "-"*(37 + (len(policy) * 2 + 3)))
-	print("\tBeginning Policy Evaluation on Policy", policy)
-	print("\t" + "-"*(37 + (len(policy) * 2 + 3)))
 	cost = 1
 	values_old = value_function
-	print(values_old.shape)
 
 	step = 0
 	while cost > tol:
@@ -70,30 +66,17 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 		for state_s in list(P.keys()):
 			# get the reward for the state action pairing in the policy
 			probability, next_state, reward, final = P[state_s][policy[state_s]][0]
-			#print("State:", state_s)
-			#print("Reward:", reward)
-			#print("V(", state_s, ") =", values[state_s])
-			#print("v(", state_s, ") =", values_old[state_s])
-			#print("Next: ", next_state)
-			#print("V(",  next_state, ")", values[next_state])
-			#print("v(", next_state, ")", values_old[next_state])
-			#print()
-			#print('pi(', policy[state_s],'|', state_s, ') = ', P[state_s][policy[state_s]][0][2])
 			value = values_old[state_s]
 			values[state_s] = reward + gamma * probability * values[next_state]
 
-		print()
 		step += 1
 
-		cost = np.linalg.norm(values - values_old, 1)
+		cost = np.linalg.norm(values - values_old, ord=1)
 
 		values_old = values
 
 	value_function = values
 
-	print("\t" + "-"*(44 + (len(str(value_function)) + 3)))
-	print("\tEnding Policy Evaluation with value function", value_function)
-	print("\t" + "-"*(44 + (len(str(value_function)) + 3)))
 	############################
 	return value_function
 
@@ -122,20 +105,13 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
-	print("\n\t" + '-' * (44 + len(str(value_from_policy))))
-	print("\tStarting Policy Update With Value", value_from_policy)
-	print("\t" + '-' * (44 + len(str(value_from_policy))))
 	Q_set = [[0] * nS] * nS
 	for state_s in list(P.keys()):
 		for state_t in list(P[state_s].keys()):
 			Pss, Ns, Rsa, term = P[state_s][state_t][0]
 			Q_set[state_s][state_t]	= Rsa + Pss * value_from_policy[Ns] * gamma
 
-		print("Q[", state_s, "][", Q_set[state_s].index(max(Q_set[state_s])),"] = ", max(Q_set[state_s]))
 		new_policy[state_s] = Q_set[state_s].index(max(Q_set[state_s]))
-	print("\t" + '-' * (47 + len(str(new_policy))))
-	print("\tEnding Policy Update With New Policy", new_policy)
-	print("\t" + '-' * (47 + len(str(new_policy))))
 
 	############################
 	return new_policy
@@ -165,7 +141,6 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 	cost = 1
-	i = 0
 	while cost > tol:
 
 		value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
@@ -174,15 +149,6 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 		policy = policy_improvement(P, nS, nA, value_function , policy, gamma)
 
 		cost = np.linalg.norm(policy - policy_old, ord=1)
-
-		print("Cost at iteration", str(i) + ":", cost)
-		i += 1
-
-
-
-	print("-" * (36+len(str(policy))))
-	print("Ending Policy Iteration with Policy", policy)
-	print("-" * (36+len(str(policy))))
 
 	############################
 	return value_function, policy
@@ -211,8 +177,32 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	policy = np.zeros(nS, dtype=int)
 	############################
 	# YOUR IMPLEMENTATION HERE #
+	cost = 1
+	values = np.zeros(nS)
+	values_old = np.copy(values)
+	policy_new = np.zeros(nS, dtype=int)
+	while cost > tol:
+		for state_s in list(P.keys()):
+			max_r = values[state_s]
+			value = -1
+			best_a = policy_new[state_s]
+
+			for action in list(P[state_s].keys()):
+				p, n, r, t = P[state_s][action][0]
+
+				val = r + gamma * p * values[n]
+				if val > max_r:
+					best_a = action
+					values[state_s] = val
+			policy_new[state_s] = best_a
 
 
+		cost = np.linalg.norm(values_old - values, ord=1)
+		policy = policy_new
+		values_old = np.copy(values)
+
+	value_function = values
+	policy = policy_new
 	############################
 	return value_function, policy
 
@@ -254,8 +244,27 @@ if __name__ == "__main__":
 
 	# comment/uncomment these lines to switch between deterministic/stochastic environments
 	env = gym.make("Deterministic-4x4-FrozenLake-v0")
+	print('+' + '-' * 30 + '+')
+	print("|Deterministic-4x4-FrozenLake-v0|")
+	print('+' + '-' * 30 + '+')
 	# env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
+	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
+
+	V_pi, p_pi = policy_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	render_single(env, p_pi, 100)
+
+	print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
+
+	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	render_single(env, p_vi, 100)
+
+	#env = gym.make("Deterministic-4x4-FrozenLake-v0")
+	env = gym.make("Stochastic-4x4-FrozenLake-v0")
+
+	print('\n+' + '-' * 26 + '+')
+	print("|Stocastic-4x4-FrozenLake-v0|")
+	print('+' + '-' * 26 + '+')
 	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
 
 	V_pi, p_pi = policy_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
