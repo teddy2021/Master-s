@@ -63,17 +63,26 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 	values_old = value_function
 	print(values_old.shape)
 
+	step = 0
 	while cost > tol:
 		cost = 0
 		values = np.array(values_old)
-		step = 0
 		for state_s in list(P.keys()):
 			# get the reward for the state action pairing in the policy
 			probability, next_state, reward, final = P[state_s][policy[state_s]][0]
+			#print("State:", state_s)
+			#print("Reward:", reward)
+			#print("V(", state_s, ") =", values[state_s])
+			#print("v(", state_s, ") =", values_old[state_s])
+			#print("Next: ", next_state)
+			#print("V(",  next_state, ")", values[next_state])
+			#print("v(", next_state, ")", values_old[next_state])
+			#print()
 			#print('pi(', policy[state_s],'|', state_s, ') = ', P[state_s][policy[state_s]][0][2])
+			value = values_old[state_s]
+			values[state_s] = reward + gamma * probability * values[next_state]
 
-			values[state_s] = reward + gamma * probability * values_old[policy[state_s]]
-			print('v_', step, '(', state_s, ')=', reward, '+', gamma, '*',  values[state_s])
+		print()
 		step += 1
 
 		cost = np.linalg.norm(values - values_old, 1)
