@@ -4,6 +4,7 @@ import numpy as np
 import gym
 import time
 from lake_envs import *
+import math
 
 np.set_printoptions(precision=3)
 
@@ -259,6 +260,9 @@ if __name__ == "__main__":
 	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
 	render_single(env, p_vi, 100)
 
+	print(p_pi.reshape((int(math.sqrt(int(env.nS))), int(math.sqrt(int(env.nS))))))
+	print(p_vi.reshape((int(math.sqrt(int(env.nS))), int(math.sqrt(int(env.nS))))))
+
 	#env = gym.make("Deterministic-4x4-FrozenLake-v0")
 	env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
@@ -276,3 +280,5 @@ if __name__ == "__main__":
 	render_single(env, p_vi, 100)
 
 
+	print(p_pi.reshape((int(math.sqrt(int(env.nS))), int(math.sqrt(int(env.nS))))))
+	print(p_vi.reshape((int(math.sqrt(int(env.nS))), int(math.sqrt(int(env.nS))))))

@@ -110,4 +110,50 @@ further points by lengthening the path.
 This assumes that "there are" refers to the logical "there exists", and thus some
 squares terminate at cell 5, and some at cell 12.
 
+
+\section{Question 2}
+
+\subsection{A}
+The optimal policy obtained using policy iteration for deterministic and stochastic respectively is as 
+follows
+\[
+	\begin{bmatrix}
+		1 & 2 & 1 & 0 \\
+		1 & 0 & 1 & 0 \\
+		2 & 1 & 1 & 0 \\
+		0 & 2 & 2 & 0\\
+	\end{bmatrix}
+\]\[
+	\begin{bmatrix}
+		2 & 3 & 2 & 1 \\
+		2 & 0 & 2 & 0 \\
+		3 & 2 & 2 & 0 \\
+		0 & 3 & 3 & 0\\
+	\end{bmatrix}
+\]
+
+\subsection{B}
+The optimal policy obtained using value iteration for deterministic and stochastic respectively is as 
+follows
+\[
+	\begin{bmatrix}
+		2 & 2 & 1 & 0 \\
+		1 & 0 & 1 & 0 \\
+		2 & 2 & 1 & 0 \\
+		0 & 2 & 2 & 0\\
+	\end{bmatrix}
+\]\[
+	\begin{bmatrix}
+		3 & 3 & 2 & 1 \\
+		2 & 0 & 2 & 0 \\
+		3 & 3 & 2 & 0 \\
+		0 & 3 & 3 & 0\\
+	\end{bmatrix}
+\]
+
+\subsection{C}
+When the system is detetrministic, the agent is guaranteeod to find the final and
+optimal state because its actions always succeed. On the other hand, when the 
+system is stochastic, neither method of finding the policy seems to matter in terms
+of getting to the reward, because the action has a chance to fail.
 \end{document}
