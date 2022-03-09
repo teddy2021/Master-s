@@ -212,7 +212,14 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     # HINT: IF TWO ACTIONS HAVE THE SAME MAXIMUM Q VALUE, THEY MUST BOTH BE EXECUTED EQUALLY LIKELY.
     #     THIS IS IMPORTANT FOR EXPLORATION. This might prove useful:
     #     https://stackoverflow.com/questions/17568612/how-to-make-numpy-argmax-return-all-occurrences-of-the-maximum
-
+    m = nA
+    em = epsilon/m
+    new_policy = np.where(
+                        np.argwhere( Q_value == np.amax(Q_value),
+                        (em + 1 - epsilon,
+                        em)
+                    )
+    )
     ############################
     return new_policy
 
@@ -245,9 +252,14 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-
+    for i in range(iterations):
+        epsilon = 1 / (i + 1)
+        Q_value, n_visits = mc_policy_evaluation(env, policy,
+                                                 Q_values, n_visits,
+                                                 gamma)
+        policy = epsilon_greedy_policy-improve(Q_value, nS, nA, epsilon)
+    det_policy = policy
     ############################
-    det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
 
 
