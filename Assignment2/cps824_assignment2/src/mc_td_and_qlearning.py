@@ -4,6 +4,7 @@ import numpy as np
 import gym
 import time
 from lake_envs import *
+import pdb
 
 np.set_printoptions(precision=3)
 
