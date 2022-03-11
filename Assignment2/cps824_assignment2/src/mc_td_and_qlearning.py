@@ -93,10 +93,12 @@ def generate_episode(env, policy, max_steps=500):
     curr_state = env.reset()  # reset the environment and place the agent in the start square
     ############################
     # YOUR IMPLEMENTATION HERE #
-    for i in range(max_stes):
-        a, r, ns, t = take_one_step(env, policy, cur_state)
-        cur_state = ns
-        episode.append((cur_state, a, r))
+    for i in range(max_steps):
+        a, r, ns, t = take_one_step(env, policy, curr_state)
+        episode.append((curr_state, a, r))
+        curr_state = ns
+        if(t):
+            break;
     ############################
     return episode
 
@@ -136,8 +138,10 @@ def generate_returns(episode, gamma=0.9):
     # using a vector of powers of gamma along with `np.dot` will
     # make this much easier to implement in a few lines of code.
     # You don't need to use this approach however and use whatever works for you. #
-    powers = np.power(np.ones(len_episode) * gamma, np.arange(0, len_episode - 1, 1))
-    epi_returns = np.dot(powers, episode)
+    a = np.array(episode)[:,2]
+    powers = np.power(np.ones(len_episode) * gamma, np.arange(0, len_episode, 1))
+    for x in range(len_episode):
+        epi_returns[x] = a[x:].dot(powers[:len_episode - x])
     ############################
     return epi_returns
 
@@ -172,14 +176,22 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     episode = generate_episode(env, policy)
     returns = generate_returns(episode, gamma=gamma)
     visit_flag = np.zeros((nS, nA))
+    print("r:", returns)
     ############################
     # YOUR IMPLEMENTATION HERE #
-    for e in episode:
+    for x in range(len(episode)):
+        e = episode[x]
         if 0 == visit_flag[e[0]][e[1]]:
-            visit_flag[e[0]][e[1]] = 1
-            n_visits[e[0]][e[1]] += 1
-            Q_value[e[0]][e[1]] = Q_value[e[0]][e[1]]
-            + (1/n_visits[e[0]][e[1]]) * (np.sum(returns) - Q_value[e[0]][e[1]])
+            state = e[0]
+            action = e[1]
+            print(state, action)
+            visit_flag[state][action] = 1
+            n_visits[state][action] += 1
+            print("\t\t(", np.sum(returns), "-", Q_value[state][action], ")/(", n_visits[state][action], ")")
+            print("\t\t= ", (returns[x] - Q_value[state][action]), "/", n_visits[state][action] )
+            Q_value[state][action] += (1/n_visits[state][action]) *\
+            (np.sum(returns) - Q_value[state][action])
+            print("\tnQ:",Q_value[state][action])
     ############################
     return Q_value, n_visits
 
@@ -212,14 +224,15 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     # HINT: IF TWO ACTIONS HAVE THE SAME MAXIMUM Q VALUE, THEY MUST BOTH BE EXECUTED EQUALLY LIKELY.
     #     THIS IS IMPORTANT FOR EXPLORATION. This might prove useful:
     #     https://stackoverflow.com/questions/17568612/how-to-make-numpy-argmax-return-all-occurrences-of-the-maximum
-    m = nA
-    em = epsilon/m
-    new_policy = np.where(
-                        np.argwhere( Q_value == np.amax(Q_value),
-                        (em + 1 - epsilon,
-                        em)
-                    )
-    )
+    maxs = []
+    for x in range(len(Q_value)):
+        maxs.append(np.argwhere(Q_value[x] == np.argmax(Q_value[x])))
+
+    for x in range(len(maxs)):
+        for y in maxs[x]:
+            new_policy[x][y] = epsilon/nA + (1 - epsilon)
+
+    print(new_policy)
     ############################
     return new_policy
 
@@ -252,12 +265,12 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-    for i in range(iterations):
-        epsilon = 1 / (i + 1)
+    for i in range(1, iterations):
         Q_value, n_visits = mc_policy_evaluation(env, policy,
-                                                 Q_values, n_visits,
+                                                 Q_value, n_visits,
                                                  gamma)
-        policy = epsilon_greedy_policy-improve(Q_value, nS, nA, epsilon)
+        epsilon = 1 / i
+        policy = epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
     det_policy = policy
     ############################
     return Q_value, det_policy
@@ -408,6 +421,7 @@ if __name__ == "__main__":
     #env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
     print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
+    pdb.set_trace()
     Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
     test_performance(env, policy_mc)
     # render_single(env, policy_mc, 100) # uncomment to see a single episode
