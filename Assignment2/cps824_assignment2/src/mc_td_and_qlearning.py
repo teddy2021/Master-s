@@ -176,7 +176,6 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     episode = generate_episode(env, policy)
     returns = generate_returns(episode, gamma=gamma)
     visit_flag = np.zeros((nS, nA))
-    print("r:", returns)
     ############################
     # YOUR IMPLEMENTATION HERE #
     for x in range(len(episode)):
@@ -184,14 +183,10 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
         if 0 == visit_flag[e[0]][e[1]]:
             state = e[0]
             action = e[1]
-            print(state, action)
             visit_flag[state][action] = 1
             n_visits[state][action] += 1
-            print("\t\t(", np.sum(returns), "-", Q_value[state][action], ")/(", n_visits[state][action], ")")
-            print("\t\t= ", (returns[x] - Q_value[state][action]), "/", n_visits[state][action] )
             Q_value[state][action] += (1/n_visits[state][action]) *\
-            (np.sum(returns) - Q_value[state][action])
-            print("\tnQ:",Q_value[state][action])
+                (np.sum(returns[x:]) - Q_value[state][action])
     ############################
     return Q_value, n_visits
 
@@ -226,13 +221,15 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     #     https://stackoverflow.com/questions/17568612/how-to-make-numpy-argmax-return-all-occurrences-of-the-maximum
     maxs = []
     for x in range(len(Q_value)):
-        maxs.append(np.argwhere(Q_value[x] == np.argmax(Q_value[x])))
-
+        maxs.append(np.argwhere(Q_value[x] == np.max(Q_value[x])))
     for x in range(len(maxs)):
+        count = len(maxs[x])
         for y in maxs[x]:
-            new_policy[x][y] = epsilon/nA + (1 - epsilon)
-
-    print(new_policy)
+            me = nA/epsilon
+            oppose = nA - count
+            denom = count * me
+            num = (denom - count * oppose)/count
+            new_policy[x][y] = num/denom
     ############################
     return new_policy
 
@@ -271,7 +268,15 @@ def mc_glie(env, iterations=1000, gamma=0.9):
                                                  gamma)
         epsilon = 1 / i
         policy = epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
-    det_policy = policy
+    det_policy = np.ones((nS,), dtype=int)
+    for x in range(nS):
+        for y in range(nA):
+            if policy[x][y] == np.max(policy[x]):
+                det_policy[x] = y
+                y = nA
+                break
+        else:
+            continue
     ############################
     return Q_value, det_policy
 
@@ -308,6 +313,8 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
+    for i in range(iterations):
+
 
     ############################
     det_policy = np.argmax(Q_value, axis=1)
@@ -368,7 +375,7 @@ def render_single(env, policy, max_steps=100):
     ob = env.reset()
     for t in range(max_steps):
         env.render()
-        time.sleep(0.25)
+        time.sleep(0.125)
         a = policy[ob]
         ob, rew, done, _ = env.step(a)
         episode_reward += rew
@@ -421,10 +428,9 @@ if __name__ == "__main__":
     #env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
     print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
-    pdb.set_trace()
     Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
     test_performance(env, policy_mc)
-    # render_single(env, policy_mc, 100) # uncomment to see a single episode
+    render_single(env, policy_mc, 100) # uncomment to see a single episode
 
     print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
     Q_td, policy_td = td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1)
