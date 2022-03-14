@@ -190,6 +190,7 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     ############################
     return Q_value, n_visits
 
+
 def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     """Given the Q_value function and epsilon generate a new epsilon-greedy policy.
     IF TWO ACTIONS HAVE THE SAME MAXIMUM Q VALUE, THEY MUST BOTH BE EXECUTED EQUALLY LIKELY.
@@ -212,7 +213,6 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
         The new epsilon-greedy policy according. The shape of the new policy is
         as described in `sample_action`.
     """
-
     new_policy = epsilon * np.ones((nS, nA)) / nA
     ############################
     # YOUR IMPLEMENTATION HERE #
@@ -313,9 +313,32 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-    for i in range(iterations):
+    for j in range(iterations):
+        s_t1 = env.reset()  # reset the environment and place the agent in the start square
+        a_t1 = sample_action(policy, s_t1)
+        t = False
+        i = 1
+        while (not t and i <= iterations):
+            epsilon = 1/i
+            s_t2, r, t, _ = env.step(a_t1)
+            a_t2 = sample_action(policy, s_t2)
+
+            Q_value[s_t1][a_t1] = Q_value[s_t1][a_t1] + alpha * \
+                (r + (gamma * Q_value[s_t2][a_t2])\
+                - Q_value[s_t1][a_t1])
 
 
+            policy[s_t1] = epsilon / nA * np.ones((nA,))
+            maxs = np.argwhere(Q_value[s_t1] == np.max(Q_value[s_t1]))
+            count = len(maxs)
+            oppose = nA - count
+            me = nA/epsilon
+            denom =  count * me
+            num = (denom - count * oppose)/count
+            policy[s_t1][maxs] = num/denom
+
+            s_t1 = s_t2
+            a_t1 = a_t2
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -351,7 +374,23 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
+    policy_b = np.ones((nS, nA)) * epsilon / nA
+    for i in range(1,iterations):
+        epsilon = 1/i
+        a_t1, r_null, ns_null, t_null = take_one_step(env, policy_b, s_t1)
+        act_prime, r_prime, ns_prime, t_prime = take_one_step(env, policy, s_t1)
 
+        Q_value[s_t1,act_prime] = Q_value[s_t1, a_t1] + \
+            alpha * \
+                (r_null + \
+                 gamma * Q_value[s_t1, act_prime] -\
+                 Q_value[s_t1, a_t1])
+        policy[s_t1] = np.zeros((nA,))
+
+        maxs = np.argwhere(Q_value[s_t1] == np.max(Q_value[s_t1]))
+        policy[s_t1, maxs] = 1/len(maxs)
+
+        s_t1 = ns_null
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -430,7 +469,7 @@ if __name__ == "__main__":
     print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
     Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
     test_performance(env, policy_mc)
-    render_single(env, policy_mc, 100) # uncomment to see a single episode
+    #render_single(env, policy_mc, 100) # uncomment to see a single episode
 
     print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
     Q_td, policy_td = td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1)
