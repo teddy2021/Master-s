@@ -322,6 +322,8 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
             epsilon = 1/i
             s_t2, r, t, _ = env.step(a_t1)
             a_t2 = sample_action(policy, s_t2)
+            if(t and r == 0):
+                r = -1
 
             Q_value[s_t1][a_t1] = Q_value[s_t1][a_t1] + alpha * \
                 (r + (gamma * Q_value[s_t2][a_t2])\
@@ -374,23 +376,45 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-    policy_b = np.ones((nS, nA)) * epsilon / nA
-    for i in range(1,iterations):
-        epsilon = 1/i
-        a_t1, r_null, ns_null, t_null = take_one_step(env, policy_b, s_t1)
-        act_prime, r_prime, ns_prime, t_prime = take_one_step(env, policy, s_t1)
+    j = 0
+    while j < iterations:
+        j += 1
+        epsilon = 1/j
+        t = False
+        i = 0
+        s_t1 = env.reset()
 
-        Q_value[s_t1,act_prime] = Q_value[s_t1, a_t1] + \
-            alpha * \
-                (r_null + \
-                 gamma * Q_value[s_t1, act_prime] -\
-                 Q_value[s_t1, a_t1])
-        policy[s_t1] = np.zeros((nA,))
+        policy_b = np.ones((nS, nA)) * epsilon / nA
+        for x in range(len(Q_value)):
+            row = Q_value[x]
+            maxs = np.argwhere(row == np.max(row))
+            count = len(maxs)
+            oppose = nA - count
+            me = nA / epsilon
+            denom = count * me
+            num = (denom - count * oppose)/count
+            policy_b[x, maxs] = num/denom
 
-        maxs = np.argwhere(Q_value[s_t1] == np.max(Q_value[s_t1]))
-        policy[s_t1, maxs] = 1/len(maxs)
+        while(not t and i <= iterations):
+            i += 1
+            a_t1, r_t1, ns_t1, t_t1 = take_one_step(env, policy_b, s_t1)
 
-        s_t1 = ns_null
+            if(t_t1 and r_t1 == 0):
+                r_t1 = -1
+
+            Q_value[s_t1,a_t1] = Q_value[s_t1, a_t1] + \
+                alpha * \
+                    (
+                        r_t1 + \
+                        gamma * Q_value[ns_t1, np.argmax(Q_value[ns_t1])] -\
+                        Q_value[s_t1, a_t1]
+                     )
+
+            policy[s_t1] = np.zeros((nA,))
+            maxs = np.argwhere(Q_value[s_t1] == np.max(Q_value[s_t1]))
+            policy[s_t1, maxs] = 1/len(maxs)
+            s_t1 = ns_t1
+            t = t_t1
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -463,12 +487,12 @@ def test_performance(env, policy, nb_episodes=500, max_steps=500):
 # You may change the parameters in the functions below
 if __name__ == "__main__":
     # comment/uncomment these lines to switch between deterministic/stochastic environments
-    env = gym.make("Deterministic-4x4-FrozenLake-v0")
-    #env = gym.make("Stochastic-4x4-FrozenLake-v0")
+    #env = gym.make("Deterministic-4x4-FrozenLake-v0")
+    env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
-    print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
-    Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
-    test_performance(env, policy_mc)
+#    print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
+#    Q_mc, policy_mc = mc_glie(env, iterations=10000, gamma=0.9)
+#    test_performance(env, policy_mc)
     #render_single(env, policy_mc, 100) # uncomment to see a single episode
 
     print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
@@ -479,4 +503,4 @@ if __name__ == "__main__":
     print("\n" + "-" * 25 + "\nBeginning Q-Learning\n" + "-" * 25)
     Q_ql, policy_ql = qlearning(env, iterations=1000, gamma=0.9, alpha=0.1)
     test_performance(env, policy_ql)
-    # render_single(env, policy_ql, 100) # uncomment to see a single episode
+    #render_single(env, policy_ql, 100) # uncomment to see a single episode

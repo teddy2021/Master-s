@@ -1,0 +1,39 @@
+\documentclass{article}
+\title{CPS 8319 Assignment 2}
+\date{ March 2022 }
+\author{Kody Manastyrski}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\begin{document}
+
+\maketitle
+
+\section{Question 1}
+\subsection{C}
+The accuracy of first visit MC in a deterministic environment is 100\% around 45\% of the time.
+That is, with 20 runs, the result is 100\% 7/20 times.
+
+\subsection{D}
+With 1,000 iterations, the MC policy results in a lower bound of 2\% and upper of 51.4\% in 20 runs.
+On the other hand with 10,000 iterations, MC's bounds become 4\% and 99.4\%
+
+
+\section{Question 2}
+\subsection{A}
+With 1,000 iterations, SARSA and Q-Learning both have 100\% all of the time in 20 runs, in a deterministic environment.
+In a stochastic environment with 1,000 iterations SARSA has bounds of [6\%, 39.8\%].
+With 10,000 iterations the bounds become [13.6\%, 100\%]
+
+\subsection{B}
+With 1,000 iterations, Q-Learning has 100\% accuracy in all 20 runs.
+With a stochastic environment it has bounds of [3\%, 59.4\%] with 1,000 iterations.
+With 10,000 iterations the bounds become [6.4\%, 71.6\%]
+
+\subsection{C}
+Setting the non-success terminal states to have a reward of -1 gave an average
+result of 51.86\% with a variance of 1482.8846 for temporal difference, and 
+99.99\% with a variance of 0.002 for q-learning.
+
+\end{document}
