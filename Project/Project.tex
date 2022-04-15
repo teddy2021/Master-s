@@ -1,0 +1,51 @@
+\documentclass{article}
+
+\author{Kody Manastyrski}
+\title{CP 8316 Reinforcement Learning}
+\date{April 2022}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\begin{document}
+
+\maketitle
+
+\section{Question 1}
+The max value of the system is 4.0, which is achieved through taking the path:
+\[\{0, 2, 1, 2, 1\}\]
+
+Suppose that there is a path which has a greater value than 4. 
+For ease of notation we shall define approaching 4 from below as adding up from
+$-\infty$, and approaching from above as subtracting from $\infty$. 
+With the notation in mind, we see that there are two cases for a path to result
+in a value greater than 4, but doesn't.
+Either it approaches from below and adds some value,
+$\Psi$, to the cumulative total to that point, or it approaches from above and
+adds $-\Psi$ to the cumulative total.
+
+In the first case, this implies either 
+that $\Psi$ must either be a negative value with absolute value greater than 0.3,
+or it must have a value greater than 1.
+In either case, no such state exists. 
+
+In the case where we approach 4 from above the value of $\Psi$ must take on the
+value of either -0.1, -0.2, or -1.
+This gives an above value of 4.1, 4.2, or 5.0. 
+4.1 and 4.2 can only result when the cumulative total is 4, which we see results from 
+a path that exhasts the horizon.
+5.0 must result from a cumulative total of 4 added to 1 
+(which itself results from the rewards of state 2 and 3 in concert), or 3 and 2 
+(which is the result of the rewards of states 2 and 1 in concert).
+In the former case, we already know that a cumulative total of 4 exhastst the  horizon.
+For the latter case, there must be a cumulative sum of 3 which has at most 3 states included.
+Since the first state is always 0, this removes 1 for the possibility space of states.
+Thus there must be a state that either has value 3, which there isnt', or a pair of states
+with value 3 together. 
+Any of the states which add value (positively or negatively) have absolute value below 1, 
+thus no 2 states sum together to 3. 
+On the other hand transitioning from state 2 could result in 3 if the state transitioned
+into has value -0.3. 
+No such state exists, however, and thus approaching from above is impossible.
+\end{document}
