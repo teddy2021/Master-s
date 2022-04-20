@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from typing import Tuple
 from pathlib import Path
-from torch.tensor import Tensor
+from torch import tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 from core.q_learning import QN
@@ -28,7 +28,7 @@ class DQN(QN):
         raise NotImplementedError
 
 
-    def get_q_values(self, state: Tensor, network: str) -> Tensor:
+    def get_q_values(self, state: tensor, network: str) -> tensor:
         """
         Input:
             state: A tensor of shape (batch_size, img height, img width, nchannels x config.state_history)
@@ -41,9 +41,9 @@ class DQN(QN):
 
     def update_target(self) -> None:
         """
-        Update_target_op will be called periodically 
+        Update_target_op will be called periodically
         to copy Q network to target Q network
-    
+
         Args:
             q_scope: name of the scope of variables for q
             target_q_scope: name of the scope of variables for the target
@@ -52,8 +52,8 @@ class DQN(QN):
         raise NotImplementedError
 
 
-    def calc_loss(self, q_values : Tensor, target_q_values : Tensor, 
-                    actions : Tensor, rewards: Tensor, done_mask: Tensor) -> Tensor:
+    def calc_loss(self, q_values : tensor, target_q_values : tensor,
+                    actions : tensor, rewards: tensor, done_mask: tensor) -> tensor:
         """
         Set (Q_target - Q)^2
         """
@@ -67,7 +67,7 @@ class DQN(QN):
         raise NotImplementedError
 
 
-    def process_state(self, state : Tensor) -> Tensor:
+    def process_state(self, state : tensor) -> tensor:
         """
         Processing of state
 
@@ -120,10 +120,10 @@ class DQN(QN):
             'WARNING: Networks not initialized. Check initialize_models'
         self.update_target()
 
-       
+
     def add_summary(self, latest_loss, latest_total_norm, t):
         """
-        Tensorboard stuff
+        tensorboard stuff
         """
         self.summary_writer.add_scalar('loss', latest_loss, t)
         self.summary_writer.add_scalar('grad_norm', latest_total_norm, t)
@@ -146,7 +146,7 @@ class DQN(QN):
         # self.saver.save(self.sess, self.config.model_output)
 
 
-    def get_best_action(self, state: Tensor) -> Tuple[int, np.ndarray]:
+    def get_best_action(self, state: tensor) -> Tuple[int, np.ndarray]:
         """
         Return best action
 
@@ -179,13 +179,13 @@ class DQN(QN):
         s_batch, a_batch, r_batch, sp_batch, done_mask_batch = replay_buffer.sample(
             self.config.batch_size)
         self.timer.end('update_step/replay_buffer.sample')
-        
+
         assert self.q_network is not None and self.target_network is not None, \
             'WARNING: Networks not initialized. Check initialize_models'
         assert self.optimizer is not None, \
             'WARNING: Optimizer not initialized. Check add_optimizer'
 
-        # Convert to Tensor and move to correct device
+        # Convert to tensor and move to correct device
         self.timer.start('update_step/converting_tensors')
         s_batch = torch.tensor(s_batch, dtype=torch.uint8, device=self.device)
         a_batch = torch.tensor(a_batch, dtype=torch.uint8, device=self.device)
@@ -212,7 +212,7 @@ class DQN(QN):
         self.timer.end('update_step/forward_pass_target')
 
         self.timer.start('update_step/loss_calc')
-        loss = self.calc_loss(q_values, target_q_values, 
+        loss = self.calc_loss(q_values, target_q_values,
             a_batch, r_batch, done_mask_batch)
         self.timer.end('update_step/loss_calc')
         self.timer.start('update_step/loss_backward')

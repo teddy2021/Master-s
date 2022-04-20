@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.tensor import Tensor
+from torch import tensor
 from utils.test_env import EnvTest
 from core.deep_q_learning_torch import DQN
 from q2_schedule import LinearExploration, LinearSchedule
@@ -13,9 +13,11 @@ import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 logging.getLogger('matplotlib.font_manager').disabled = True
 
+import pdb
+
 class Linear(DQN):
     """
-    Implement Fully Connected with Tensorflow
+    Implement Fully Connected with tensorflow
     """
     def initialize_models(self):
         """Creates the 2 separate networks (Q network and Target network). The input
@@ -37,7 +39,8 @@ class Linear(DQN):
 
         ##############################################################
         ################ YOUR CODE HERE (2 lines) ##################
-
+        self.q_network = torch.nn.Linear(input_size, num_actions)
+        self.target_network = torch.nn.Linear(input_size, num_actions)
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -59,15 +62,20 @@ class Linear(DQN):
             1. Look up torch.flatten
             2. You can forward a tensor through a network by simply calling it (i.e. network(tensor))
         """
-        out = None
+
 
         ##############################################################
         ################ YOUR CODE HERE - 3-5 lines ##################
 
+        if('q_network' == network):
+            net = self.q_network
+        else:
+            net = self.target_network
+        return net(torch.flatten(state,1,3))
+
         ##############################################################
         ######################## END YOUR CODE #######################
 
-        return out
 
 
     def update_target(self):
@@ -87,13 +95,13 @@ class Linear(DQN):
 
         ##############################################################
         ################### YOUR CODE HERE - 1-2 lines ###############
-
+        self.target_network.load_state_dict(self.q_network.state_dict())
         ##############################################################
         ######################## END YOUR CODE #######################
 
 
-    def calc_loss(self, q_values : Tensor, target_q_values : Tensor,
-                    actions : Tensor, rewards: Tensor, done_mask: Tensor) -> Tensor:
+    def calc_loss(self, q_values : tensor, target_q_values : tensor,
+                    actions : tensor, rewards: tensor, done_mask: tensor) -> tensor:
         """
         Calculate the MSE loss of this step.
         The loss for an example is defined as:
@@ -122,7 +130,7 @@ class Linear(DQN):
             You can treat `done_mask` as a 0 and 1 where 0 is not done and 1 is done using torch.type as
             done below
 
-            To extract Q(a) for a specific "a" you can use the torch.sum and torch.nn.functional.one_hot. 
+            To extract Q(a) for a specific "a" you can use the torch.sum and torch.nn.functional.one_hot.
             Think about how.
         """
         # you may need this variable
@@ -132,10 +140,17 @@ class Linear(DQN):
         actions = actions.type(torch.int64)
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
-
+        one_hot = torch.nn.functional.one_hot(actions, num_actions)
+        Q_samp = tensor([rewards[i].item()
+                         if done_mask[i].item() == 1 else
+                        rewards[i].item() + gamma * torch.max(target_q_values[i])
+                  for i in range(done_mask.size()[0])])
+        Q = torch.sum(q_values * one_hot, 1)
+        loss = tensor([torch.nn.functional.mse_loss(Q_samp[i], Q[i])
+                       for i in range(Q.size()[0])])
         ##############################################################
         ######################## END YOUR CODE #######################
-        return loss
+        return loss.to(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
 
     def add_optimizer(self):
         """
@@ -148,7 +163,7 @@ class Linear(DQN):
         """
         ##############################################################
         #################### YOUR CODE HERE - 1 line #############
-
+        self.optimizer = torch.optim.Adam(self.q_network.parameters())
         ##############################################################
         ######################## END YOUR CODE #######################
 

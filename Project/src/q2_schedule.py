@@ -33,7 +33,11 @@ class LinearSchedule(object):
         """
         ##############################################################
         ################ YOUR CODE HERE - 3-4 lines ##################
-        
+        if (t<= self.nsteps):
+            self.epsilon = ((self.eps_begin - self.eps_end)/self.nsteps)*t
+        else:
+            self.epsilon = self.eps_begin - self.eps_end
+
         ##############################################################
         ######################## END YOUR CODE ############## ########
 
@@ -74,9 +78,13 @@ class LinearExploration(LinearSchedule):
                 you may use env.action_space.sample() to generate
                 a random action
         """
+        pa = self.epsilon
+        pb = 1 - pa
+        accept = self.env.action_space.sample()
+        return np.random.choice(np.array([accept, best_action]), p=np.array([pa, pb]))
         ##############################################################
         ################ YOUR CODE HERE - 4-5 lines ##################
-        
+
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -91,7 +99,7 @@ def test1():
         rnd_act = exp_strat.get_action(0)
         if rnd_act != 0 and rnd_act is not None:
             found_diff = True
-
+    print(exp_strat.epsilon)
     assert found_diff, "Test 1 failed."
     print("Test1: ok")
 
@@ -100,6 +108,7 @@ def test2():
     env = EnvTest((5, 5, 1))
     exp_strat = LinearExploration(env, 1, 0, 10)
     exp_strat.update(5)
+    print(exp_strat.epsilon)
     assert exp_strat.epsilon == 0.5, "Test 2 failed"
     print("Test2: ok")
 
@@ -108,6 +117,7 @@ def test3():
     env = EnvTest((5, 5, 1))
     exp_strat = LinearExploration(env, 1, 0.5, 10)
     exp_strat.update(20)
+    print(exp_strat.epsilon)
     assert exp_strat.epsilon == 0.5, "Test 3 failed"
     print("Test3: ok")
 
