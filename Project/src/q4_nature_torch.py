@@ -66,7 +66,73 @@ class NatureQN(Linear):
         numb_filters = np.array([32, 64, 64])  # number of filters for every conv2d layer
         ##############################################################
         ################ YOUR CODE HERE - 25-30 lines lines ################
+        output_sizes = [
+            (
+                ((img_height - filter_sizes[0])/strides[0]) + 1,
+                ((img_width - filter_sizes[0])/strides[0]) + 1,
+            )
+        ]
+        for i in range(0, 1):
+            output_sizes.append(
+                (
+                    ((output_sizes[i][0] - filter_sizes[i+1])/strides[i+1]) + 1,
+                    ((output_sizes[i][1] - filter_sizes[i+1])/strides[i+1]) + 1
+                )
+            )
+        sequences = [
+            (
+                nn.Conv2d(
+                    n_channels * self.config.state_history,
+                    1,
+                    filter_sizes[0],
+                    strides[0]
+                ),
+                nn.Conv2d(
+                    n_channels * self.config.state_history,
+                    1,
+                    filter_sizes[0],
+                    strides[0]
+                )
+            ),
+            nn.ReLU(),
 
+            (
+                nn.Conv2d(
+                    1,
+                    1,
+                    filter_sizes[1],
+                    strides[1]
+                ),
+                nn.Conv2d(
+                    1,
+                    1,
+                    filter_sizes[1],
+                    strides[1]
+                )
+            ),
+            nn.ReLU(),
+
+            (
+                nn.Conv2d(1,
+                    1,
+                    filter_sizes[2],
+                    strides[2]
+                ),
+                nn.Conv2d(1,
+                    1,
+                    filter_sizes[2],
+                    strides[2]
+                )
+            ),
+            nn.ReLU(),
+            nn.Flatten(output_sizes[-1][0] * output_sizes[-1][1],512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions),
+        ]
+        self.q_network = nn.Sequential([i if type(i) != tuple else i[0]
+                                        for i in sequences])
+        self.q_network = nn.Sequential([i if type(i) != tuple else i[1]
+                                        for i in sequences])
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -90,7 +156,12 @@ class NatureQN(Linear):
         out = None
         ##############################################################
         ################ YOUR CODE HERE - 4-5 lines lines ################
-        
+        print(state.size())
+        if 'q_network' == network:
+            net = self.q_network
+        else:
+            net = self.target_network
+        print(net)
         ##############################################################
         ######################## END YOUR CODE #######################
         return out
