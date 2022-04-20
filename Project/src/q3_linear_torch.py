@@ -13,7 +13,6 @@ import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 logging.getLogger('matplotlib.font_manager').disabled = True
 
-import pdb
 
 class Linear(DQN):
     """
@@ -141,16 +140,18 @@ class Linear(DQN):
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
         one_hot = torch.nn.functional.one_hot(actions, num_actions)
-        Q_samp = tensor([rewards[i].item()
-                         if done_mask[i].item() == 1 else
-                        rewards[i].item() + gamma * torch.max(target_q_values[i])
-                  for i in range(done_mask.size()[0])])
+        Q_samp = tensor([
+            rewards[i].item() if done_mask[i].item() == 1 
+            else 
+            rewards[i].item() + (gamma * torch.max(target_q_values[i])) 
+            for i in range(rewards.size()[0])
+          ], 
+          requires_grad=True)
         Q = torch.sum(q_values * one_hot, 1)
-        loss = tensor([torch.nn.functional.mse_loss(Q_samp[i], Q[i])
-                       for i in range(Q.size()[0])])
+        loss = torch.nn.functional.mse_loss(Q_samp, Q)
         ##############################################################
         ######################## END YOUR CODE #######################
-        return loss.to(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
+        return loss
 
     def add_optimizer(self):
         """
@@ -168,18 +169,22 @@ class Linear(DQN):
         ######################## END YOUR CODE #######################
 
 
+def go():
+  env = EnvTest((5, 5, 1))
+
+  # exploration strategy
+  exp_schedule = LinearExploration(env, config.eps_begin,
+      config.eps_end, config.eps_nsteps)
+
+  # learning rate schedule
+  lr_schedule  = LinearSchedule(config.lr_begin, config.lr_end,
+        config.lr_nsteps)
+
+  # train model
+  model = Linear(env, config)
+  model.run(exp_schedule, lr_schedule)
+
+
 
 if __name__ == '__main__':
-    env = EnvTest((5, 5, 1))
-
-    # exploration strategy
-    exp_schedule = LinearExploration(env, config.eps_begin,
-            config.eps_end, config.eps_nsteps)
-
-    # learning rate schedule
-    lr_schedule  = LinearSchedule(config.lr_begin, config.lr_end,
-            config.lr_nsteps)
-
-    # train model
-    model = Linear(env, config)
-    model.run(exp_schedule, lr_schedule)
+  go()
