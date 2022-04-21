@@ -67,33 +67,48 @@ class NatureQN(Linear):
         ##############################################################
         ################ YOUR CODE HERE - 25-30 lines lines ################
         input_channels = n_channels * self.config.state_history
+        print(img_height, img_width, n_channels, input_channels)
+        paddings = [
+            ((strides[i] - 1) * img_height - strides[i] + filter_sizes[i])//2
+            for i in range(len(strides))
+        ]
         self.q_network = nn.Sequential(
-            nn.Conv2d(input_channels, input_channels//2,
-                    filter_sizes[0], strides[0]),
-            #nn.ReLU(),
-            #nn.Conv2d(input_channels//2, input_channels // 3, filter_sizes[1], strides[1]),
-            #nn.ReLU(),
-            #nn.Conv2d(input_channels//3, 1, filter_sizes[2], strides[2]),
-            #nn.ReLU(),
-            #nn.Flatten(1,3),
-            #nn.Linear(1536, 512),
-            #nn.ReLU(),
-            #nn.Linear(512, num_actions)
+            nn.Conv2d(input_channels, numb_filters[0],
+                    kernel_size=filter_sizes[0], stride=strides[0],
+                      padding=paddings[0]),
+            nn.ReLU(),
+            nn.Conv2d(numb_filters[0], numb_filters[1],
+                      kernel_size=filter_sizes[1], stride=strides[1],
+                      padding=paddings[1]),
+            nn.ReLU(),
+            nn.Conv2d(numb_filters[1], numb_filters[2],
+                      kernel_size=filter_sizes[2], stride=strides[2],
+                      padding=paddings[2]),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(img_width * img_height * numb_filters[-1], 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
         )
+
         self.target_network = nn.Sequential(
-            nn.Conv2d(input_channels, input_channels//2,
-                    filter_sizes[0], strides[0]),
-            #nn.ReLU(),
-            #nn.Conv2d(input_channels//2, input_channels // 3, filter_sizes[1], strides[1]),
-            #nn.ReLU(),
-            #nn.Conv2d(input_channels//3, 1, filter_sizes[2], strides[2]),
-            #nn.ReLU(),
-            #nn.Flatten(1,3),
-            #nn.Linear(1536, 512),
-            #nn.ReLU(),
-            #nn.Linear(512, num_actions)
+            nn.Conv2d(input_channels, numb_filters[0],
+                    kernel_size=filter_sizes[0], stride=strides[0],
+                      padding=paddings[0]),
+            nn.ReLU(),
+            nn.Conv2d(numb_filters[0], numb_filters[1],
+                      kernel_size=filter_sizes[1], stride=strides[1],
+                      padding=paddings[1]),
+            nn.ReLU(),
+            nn.Conv2d(numb_filters[1], numb_filters[2],
+                      kernel_size=filter_sizes[2], stride=strides[2],
+                      padding=paddings[2]),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(img_width * img_height * numb_filters[-1], 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
         )
-        print(self.q_network, self.target_network)
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -114,20 +129,15 @@ class NatureQN(Linear):
             1. What are the input shapes to the network as compared to the "state" argument?
             2. You can forward a tensor through a network by simply calling it (i.e. network(tensor))
         """
-        out = None
         ##############################################################
         ################ YOUR CODE HERE - 4-5 lines lines ################
-        print(state.size())
         if 'q_network' == network:
             net = self.q_network
         else:
             net = self.target_network
-        print(net)
-        print(state.permute(0,3,2,1).size())
-        print(net(state.permute(0,3,2,1).flatten(1,3)).size())
+        return net(state.permute(0,3,2,1))
         ##############################################################
         ######################## END YOUR CODE #######################
-        return out
 
 
 """
