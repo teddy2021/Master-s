@@ -8,6 +8,9 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 
+\usepackage{graphicx}
+\usepackage{subfigure}
+
 \begin{document}
 
 \maketitle
@@ -60,6 +63,72 @@ this case state) which is the objective of using the value function.
 The tests pass. No additional tests were implemented at initial time of writing.
 
 \subsection{}
-Considering 
+
 \subsection{}
+
+\section{Question 3}
+\subsection{}
+The system occassionally reaches the max value, but mostly gets in the area. 
+With repeated running of q3, the average reward scatters between 0.5 and 4.1.
+The most recent running of the system is appended below.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.75\textwidth]{src/results/q3_linear/scores.png}
+	\caption{Most recent result from running q3\_linear.py}
+\end{figure}
+
+\subsection{}
+Running q4\_nature.py shows values more closely scattered, roughly around 2.05,
+with more values above than below this value.
+Training time takes longer, but still remains within a few minutes.
+Like with the above example, the most recent running of q4\_nature.py has its 
+score plot attatched below.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.75\textwidth]{src/results/q4_nature/scores.png}
+	\caption{Most recent result from running q4\_nature.py}
+\end{figure}
+
+\section{Question 4}
+
+\subsection{}
+The average reward as time progresses remains at around -20. 
+This suggests that the system managed to find a local minimum. 
+With the methodology that is being used, further programming wouldn't likely 
+result in much change. 
+With simulated annealing, beam search, random restart, or something of the sort 
+either to replace or agument stochastic gradient descent, it is more likely that
+the system will approach more optimal results in the same timeframe, and better
+performance given more time/iterations.
+
+
+\subsection{}
+At time of writing, the system has yet to finish. 
+Unfortunately the project ran long in the tooth, and for training the only computers 
+available are linux systems, which are not currently supported by cuda with the 
+current kernel version (a quote from Linus Torvalds from the talk at Aalto
+University), so my system is stuck training on a 5 year old i5 cpu. 
+I don't anticipate it will finish by the deadline.
+
+
+\section{Question 5}
+For the same reason above, I cannot reasonably train an alternative model, and 
+thus instead of programming it, have opted to focus my efforts on a project that 
+is due in another class. 
+I will mention that my idea was to run two q networks, augmented with simulated
+annealing, and use the one with the minimal loss to update the target network.
+The simulated annealing would be implemented similarly to the epsilon greedy
+exploration strategy by adding an additional random chance to select the state 
+which has the opposite consequence from the selected state. 
+For example if an action, A, were to move the paddle up, then logically the opposite
+action would be to move the paddle down. 
+Thus with a chance determined by the 'temperature' of the system (updated each 
+time a 'success' for the temperature chance is selected) the model would select
+the opposite action. 
+Depending on how this would play out, it may instead select a series of opposite actions
+up to some threshold in order to sufficiently move the system away from a stable 
+local minima. 
+
+
 \end{document}
