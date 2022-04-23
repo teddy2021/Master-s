@@ -42,9 +42,8 @@ class Tree{
 
 	public:
 		E& operator*(){return *root;}
-		explicit Tree(int res = 2, int children = 2){ root = NULL; depth = 0; resolution = res; child_count = 0; child_width = children;}
-		explicit Tree(E val, int res = 2, int children = 2){root = new Node<E>(val), resolution = res, child_count = 0; child_width = children;}
-		~Tree(){ if(root != NULL){ delete(root); } }
+		explicit Tree(int res = 2, int c = 2){ root = NULL; depth = 0; resolution = res; child_count = 0; child_width = c;}
+		explicit Tree(E val, int res = 2, int c = 2){root = new Node<E>(val), resolution = res, child_count = 0; child_width = c;}
 
 		void addChild(Node<E> n);
 		void addChild(Node<E> *n);

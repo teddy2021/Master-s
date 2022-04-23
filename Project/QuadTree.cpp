@@ -5,17 +5,19 @@
 //
 
 #ifndef quadtree
-#define quadtree
 #include "QuadTree.hpp"
+
 #include "DialatedNumber.hpp"
+#include "NDObject.hpp"
 #include <vector>
 using namespace std;
 
-template <typename E>
-void QuadTree::Insert(NDObject<E> val){
+
+template <class E>
+void QuadTree<E>::Insert(NDObject<E> val){
 	if(NULL == child1){
 		if(NULL == stored){
-			stored = NDObject[resolution + 1];
+			stored = new NDObject<E>[resolution + 1]();
 			*stored = 1;
 			stored[1] = val; 
 		}
@@ -27,7 +29,8 @@ void QuadTree::Insert(NDObject<E> val){
 			stored[*stored] = NDObject<E>(val);
 			*stored += 1;
 		}
-	}else{
+	}
+	else{
 
 	}
 }
@@ -79,6 +82,14 @@ void QuadTree::Insert(NDObject<E> val){
 			}
 		}
 	}
+}
+
+
+void QuadTree::Divide(){
+	child1 = new QuadTree();
+	child2 = new QuadTree();
+	child3 = new QuadTree();
+	child4 = new QuadTree();
 }
 
 #endif

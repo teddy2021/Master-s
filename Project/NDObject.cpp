@@ -4,9 +4,8 @@
 // NDObject cpp
 //
 
-#ifndef NDOBJ
-#define NDOBJ
-
+#ifdef NDOBJ
+#include "NDObject.hpp"
 #include <stdarg.h>
 #include <iostream>
 #include <glm/glm.hpp>

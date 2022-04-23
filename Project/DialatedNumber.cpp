@@ -5,7 +5,6 @@
 //
 
 #ifndef dialate
-#define dialate
 #include "DialatedNumber.hpp"
 #include <math.h>
 #include<bitset>

@@ -1,0 +1,88 @@
+\documentclass{article}
+
+\title{CP 8319 Final Project: Quad Trees}
+\author{Kody Manastyrski}
+\date{April 2022}
+
+\usepackage{hyperref}
+
+\usepackage{natbib}
+\bibliographystyle{acm}
+
+\begin{document}
+
+\maketitle
+
+Presently computer science students in their undergrad studies often deal with 
+trees. 
+Most students learn about various flavours of binary trees, such as binary search
+trees, self balancing trees, and so on. 
+A tree can provide a handy method for quickening solutions to log time complexity.
+
+The subject of this discussion will be a specific flavour of tree: Quad Tree. 
+We will disucss their definition, use, and performance impact in the following
+paragraphs. 
+To provide some additional information, we will also provide some commentary on
+a specific modification on Quad Trees which enables constant time location of 
+equally sized neighbours within the tree.
+
+A binary tree is one which splits its input list into roughly even parts, 
+dependant upon some criteria, and either stores the data directly, or creates a 
+subtree for each half of the data. 
+A quadtree differs by dividing the input into four groups up to some resolution
+limit. 
+This resolution limit is dependant upon the application the tree is being used for. 
+For example, the point location problem requires a resolution limit of one, since
+its goal is of course locating a point relative to some referents. 
+On the other hand when the tree is used to speed up graphical problems, then the
+resolution is linked to the relation that an entity has with its neighbours, and what 
+information is required. 
+Regardless of the resolution, when a quadtree divides it always creates four children.
+This present a drawback compared to other trees which only add a new subtree where
+needed.
+
+A quadtree is capable of locating equally sized neighbours by including the use
+of dialated numbers. 
+This class of numbers was proposed by G{\"u}nther Schrack \cite{Schrack} in 1992. 
+A dialated number is the inflation of a number's binary representation by inserting
+0's between its significant digits. 
+For example, 21 which has binary representation 10101 becomes 100010001, which is
+273. 
+In addition to this rule, negative numbers are represented by inflating with ones
+instead of 0s.
+So, for -5 we have binary representation 111011 (allowing some padding between 
+the sign bit and the most significant bit for later dialation) becomes 11111101111
+which is 2031 (according to the sceheme used, which does not encode negatives with
+2's compelement).
+Naturally arithmetic at a machine level has to account for this change, and formulae
+are provided for addition and subtraction between dialated numbers.
+In addition extraction is done merely by removing the values at the even positions 
+of the binary representation, and bitwise or'ing the result's leading ones if it's
+negative (if the dialated value is greater than $4^{rwsolution}$).
+
+The scheme proposed by Schrack for storing coordinates is to or the dialated x
+value with the dialated y value after bitshifting left once. In this way a single 
+variable can hold both coordinates effectively. Removal is then simply a matter
+of contracting the original value for x, or contracting the value bitshifted left by
+one for y. 
+In order to find the 8 nearest neighbours of same size for a given cell, the forumla
+\[ coord_{new} = coord_{current} + (new << 2(r-l)) \] where $new$ is the offset from the
+current coordinate in the space, r is the resolution, and l is the level/depth in the tree.
+
+The experimental setup to display gains from the usage of a quad tree, especially in this 
+was to run boids.
+Boids are a simple simulation entity, similar to cellular automata. 
+A boid has 3 simple rules: avoid collisions with other entities, try to align with odther 
+Boids, and failing the other two, mainain present velocity. 
+The particular implementation of these would have them only able to control their acceleration.
+The method to show a qualitative comparison in computablility would be to place a random
+assortment of boids (minimum 20) into an empty space. 
+The user would be able to toggle between a tree update implementation and a flat list.
+Unfortunately, because of poor time management during the bulk of the semester, and
+issues with cmake towards the end of the semester, a working deliverable is not in order.
+The code \href{https://github.com/teddy2021/Master-s/tree/ComputationalGeometry/Project}{is available here.}
+
+\bibliography{Bibliography}
+
+\end{document}
+

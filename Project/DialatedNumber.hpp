@@ -4,6 +4,8 @@
 // Dialated Number hpp
 //
 
+#ifndef DIALATED
+#define DIALATED
 #include<bitset>
 
 using namespace std;
@@ -15,6 +17,7 @@ class Dialated{
 
 	public:
 		Dialated(int val);
+		Dialated(){ Dialated(0); }
 		Dialated operator/(Dialated& other);
 		Dialated operator+(const Dialated& other);
 		Dialated operator-(const Dialated& other);
@@ -35,3 +38,5 @@ class Dialated{
 
 
 };
+
+#endif

@@ -36,17 +36,17 @@ class QuadTree: public Tree<E>{
 		void subdivide();
 	
 	public: 
-		QuadTree(int resolution, Dialated t, Dialated l):Tree<E>(4, 0){ 
+		QuadTree(int resolution, int t, int l):Tree<E>(4, 0){ 
 			depth = 1; 
-			top = t; 
-			left = l; 
+			top = (Dialated)t; 
+			left = (Dialated)l; 
 			stored_count = 0;
 		}
 
-		QuadTree(int res, vector<NDObject<E>> val, int t, int l, int d=1):Tree<E>(4, val.size()){
+		QuadTree(int res, vector<NDObject<E>> val, int t, int l, int d=1):Tree<E>(res=4, val.size()){
 			depth = d;
-			top = Dialated(t);
-			left = Dialated(l);
+			top = (Dialated)t;
+			left = (Dialated)l;
 			int middleX = l>0?l/pow(2,depth):-l/pow(2,depth);
 			int middleY = t>0?pow(2,t/depth):-t/pow(2,depth);
 			if(res < val.size()){
@@ -71,10 +71,10 @@ class QuadTree: public Tree<E>{
 					}
 				}
 
-				child1 = QuadTree(res, c1vals, t, middleY, depth+1 ); // t1, l2
-				child2 = QuadTree(res, c2vals, t, l, depth+1); // t1, l1
-				child3 = QuadTree(res, c3vals, middleX, l, depth+1); // t2, l1
-				child4 = QuadTree(res, c4vals, middleX, middleY, depth+1); // t2, l2
+				*child1 = QuadTree(res, c1vals, t, middleY, depth+1 ); // t1, l2
+				*child2 = QuadTree(res, c2vals, t, l, depth+1); // t1, l1
+				*child3 = QuadTree(res, c3vals, middleX, l, depth+1); // t2, l1
+				*child4 = QuadTree(res, c4vals, middleX, middleY, depth+1); // t2, l2
 			}
 			else{
 				stored = (NDObject<E> *)malloc(sizeof(NDObject<E>) * resolution);

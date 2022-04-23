@@ -31,39 +31,12 @@ class NDObject{
 			dim=dimensions; 
 		}
 
-		NDObject(int count,  ... ){
-			velocity = vec3(0,0,0);
-			acceleration = vec3(0,0,0);
-			position = vec3(0,0,0);
-			dim = count;
-			va_list positions;
-			va_start(positions, count);
-			for(int i = 0; i < dim; i += 1){
-				position[i] = va_arg(positions, float);
-			}
-			va_end(positions);
-		}
-
 		NDObject(E val, int dimensions){
 			object = val;
 			position = vec3(0,0,0);
 			velocity = vec3(0,0,0);
 			acceleration = vec3(0,0,0);
 			dim = dimensions;
-		}
-		
-		NDObject(E val, int count,  ... ){
-			velocity = vec3(0,0,0);
-			acceleration = vec3(0,0,0);
-			position = vec3(0,0,0);
-			dim = count;
-			va_list positions;
-			va_start(positions, count);
-			for(int i = 0; i < dim; i += 1){
-				position[i] = va_arg(positions, float);
-			}
-			va_end(positions);
-			object = val;
 		}
 	
 		void setPosition(int count, ...);
@@ -74,6 +47,10 @@ class NDObject{
 		vec3 getVelocity();
 		vec3 getPosition();
 		int getDimensions();
+
+		E *getObject(){
+			return &object;
+		}
 
 
 };
